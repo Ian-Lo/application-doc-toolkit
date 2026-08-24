@@ -1,0 +1,11 @@
+{
+  "//": "source-hash: fdca6498fab4 .claude/settings.json ",
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(python3 scripts/mechanical_checks.py *)",
+      "Bash(python3 scripts/test_mechanical_checks.py)",
+      "Bash(textutil -convert txt *)"
+    ]
+  }
+}

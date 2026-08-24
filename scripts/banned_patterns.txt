@@ -1,0 +1,116 @@
+# banned_patterns.txt - the single source for every banned string in an outgoing document.
+# source-hash: afb32628a505 scripts/banned_patterns.txt
+#
+# Read by mechanical_checks.py. Keep the human rationale, and every adjudicated exception,
+# in a notes file of your own - and read it before adding, removing or relaxing a pattern
+# here. A hit is not automatically a defect: some hits are licensed, and the adjudication
+# record is what stops a later sweep from "fixing" them back out.
+#
+# WHY THIS FILE EXISTS. These patterns once had no canonical home: the most-used one lived
+# inside a review tally table, copied forward from one reviewer to the next. A tally table
+# is not a versioned instruction channel, and the pattern in it was wrong: unanchored, it
+# returned 492 hits across one corpus where 44 lines were real, and 266 of the false
+# positives were the word "univerSITy" in every resume's education block. That noise buried
+# the signal and produced a tally recorded as clean that was not.
+#
+# Format, one pattern per line:
+#   <bare text>   case-insensitive literal substring
+#   re:<regex>    regex, case-insensitive unless it sets its own flags
+#   # comment     ignored, as are blank lines
+#   #@ <category> starts a category block (see below)
+#
+# ANCHOR EVERY PATTERN. `\b...\b` around anything short enough to appear inside a longer
+# word. This is not a style preference, it is the defect above.
+#
+# ANCHOR THE ALTERNATION, DON'T NARROW IT. The obvious fix to an over-broad pattern is to
+# make it narrower, and for the `sit` family that is wrong. `\bsits?\b` finds 30 of 47
+# real occurrences and misses "sitting behind it" and every "sat" - a miss that actually
+# happened. The correct pattern anchors the full alternation: it finds all 47 and none of
+# the 448 substrings.
+#
+# EVERY REGEX NEEDS A PROBE in test_mechanical_checks.py. A pattern with no probe fails
+# that suite by design. That convention is the only reason a pattern file stays
+# trustworthy as it grows.
+#
+# A TECHNIQUE WORTH KNOWING: composition patterns. A factual boundary can be breached by
+# composition rather than by any literal string - two licensed words reassembling a
+# forbidden proposition ("<platform> ... deliver", say, when the candidate's record
+# supports deployment on that platform but not delivery). A proximity regex of the shape
+# re:\bPLATFORM\b[^.]{0,60}\bdeliver  catches the composition inside one sentence. Add
+# these per candidate fact boundary; they are personal by nature, so this generic file
+# ships none.
+#
+# WHAT DOES NOT BELONG HERE. Duration and career-length tokens ("fourteen years", "two
+# decades") are not banned strings - they are claims that must be re-derived from the
+# dates on the page. They are checked by the duration table in mechanical_checks.py, not
+# here. Banning them would be wrong: the right figure is often larger than the one on the
+# page.
+
+
+#@ tic
+# Prose tics and self-grading constructions. Reported for adjudication, not auto-failed -
+# hits can be licensed (ordinary org-chart "where the role sits", a client's own
+# procurement gate for "sign-off"). Record each licensed hit in your notes file.
+
+# The spatial verb standing in for a real relationship the writer has not worked out.
+# "Sits underneath" was the original ban; "sits inside", "sat inside" and "sitting
+# behind" are the same tic routing around it.
+re:\b(sit|sits|sitting|sat)\b
+
+# The self-grading formula: the letter tells the employer what their own role is about,
+# then grades the candidate against it. Observed in 14 cover letters from 6+ independent
+# drafting sessions - a corpus-level template, not one batch's tic.
+re:\bthis role (asks for|needs|runs on|is about)\b
+
+# A self-diminishing comparative attached to a requirement the candidate does not need
+# to concede.
+the closest thing on my record to
+
+# These almost never describe the candidate's own approval authority - they describe a
+# client's procurement gate. Licensed instances exist; adjudicate before removing a hit.
+re:\bsign-?off\b
+
+
+#@ tell
+# LLM tells. Treat as warn-only: each is strong evidence of machine-generated copy, not
+# proof of a factual defect.
+I'm writing to apply
+I would welcome the opportunity
+I'd welcome the opportunity
+thank you for considering
+opportunity to discuss
+I recognise that
+re:\bleverag(e|es|ed|ing)\b
+re:\bseamless(ly)?\b
+re:\brobust(ly|ness)?\b
+re:\brigorous(ly)?\b
+re:\bspearhead(s|ed|ing)?\b
+# The bare intensifier. Caught by hand in two consecutive batches before it became a
+# pattern; ads use the word themselves, which is likely how it seeds into drafts. Only
+# outgoing documents are scanned, so the ad's own usage does not cost a false hit.
+re:\bgenuine(ly)?\b
+
+
+#@ selfdq
+# Self-disqualifying language: a sentence whose effect is to withdraw the application.
+# Treat as a HARD FAIL - a screener who was undecided now has a decision written for
+# them, in the candidate's own words. These are multi-word and specific enough not to
+# need anchoring.
+re:isn't the right (match|fit|hire)
+re:is not the right (match|fit|hire)
+re:if .{0,60}(hard requirement|non-negotiable|deal-?breaker)
+re:you (may|might|would) prefer
+re:may prefer someone
+re:understand if this
+re:rules me out
+re:counts me out
+re:not the candidate
+re:waste anyone's
+re:waste your time
+re:rather say (so|that) (now|plainly)
+re:stating that plainly
+re:saying that upfront
+re:rather than dressing it up
+re:genuine gap, stated plainly
+re:competence I haven't earned
+re:before we go further
