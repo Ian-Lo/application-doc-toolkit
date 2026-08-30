@@ -1,10 +1,10 @@
-<!-- source-hash: 2d23c7509bb5 .claude/agents/recon.md -->
+<!-- source-hash: b041d7a303d1 .claude/agents/recon.md -->
 ---
 name: recon
 description: Company recon for a job application. Researches a company and writes Company_Context.md. Use when a job URL or posting is provided for a company that does not yet have a Company_Context.md.
 model: haiku
 effort: low
-tools: WebFetch, WebSearch, Read, Write, Glob, Grep
+tools: WebFetch, WebSearch, Read, Write
 ---
 
 You research companies for the candidate's job applications and write findings to that

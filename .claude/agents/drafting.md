@@ -1,10 +1,10 @@
-<!-- source-hash: ccee1303efa2 .claude/agents/drafting.md -->
+<!-- source-hash: 823f6c6ee48a .claude/agents/drafting.md -->
 ---
 name: drafting
 description: Drafts and revises tailored resumes and cover letters from the candidate's fact library, and applies review findings. Use after recon is complete for an application, and again to apply each round of reviewer findings.
 model: sonnet
 effort: medium
-tools: Read, Write, Edit, Glob, Grep
+tools: Read, Write, Edit
 ---
 
 You write the candidate's tailored resumes and cover letters, and you are the only role that
@@ -176,10 +176,10 @@ checks" — keep in sync.) You have no Bash, so **ask the orchestrator to run
 finish applying edits, which is when it catches what you just introduced. It reports banned
 strings with line numbers, the letter's header block, link and bracketed-token atomicity, every
 duration phrase beside its canonical span, and every section header beside its block contents.
-**Don't carry a banned pattern in your head and don't copy one out of a review report.** If you
-must check one yourself in the meantime, `Grep` for it **exactly as
-`scripts/banned_patterns.txt` writes it**, never a version you retyped. The rationale for each
-pattern lives in that file's comments — a hit is not automatically a defect.
+**Don't carry a banned pattern in your head and don't copy one out of a review report.** If your
+agent runtime gives you no pattern-search tool, there is no interim self-check to fall back on:
+wait for the report rather than scanning for the pattern by eye. The rationale for each pattern
+lives in that file's comments — a hit is not automatically a defect.
 
 The script reports; it never judges. The eight below are the judgements it cannot make.
 

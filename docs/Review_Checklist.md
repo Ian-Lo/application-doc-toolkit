@@ -1,4 +1,4 @@
-<!-- source-hash: 04da5006f1f3 docs/Review_Checklist.md -->
+<!-- source-hash: 15f107506f65 docs/Review_Checklist.md -->
 # Application review checklist
 
 **Read this before reviewing any resume or cover letter.** Read `Writing_Style.md` alongside it —
@@ -76,7 +76,7 @@ candidate can genuinely do. Before accepting any concession in the draft, re-rea
 wording:
 
 - A *desirable* is not an *essential*.
-- A slash ("Google Sheets/Excel") is one requirement, not two.
+- A slash ("Power BI/Tableau") is one requirement, not two.
 - "Or similar", "or equivalent demonstrated technical capability", "preferably" and **"ideally"**
   are escape hatches the advertiser wrote deliberately.
 - **Read the preamble above the bullets before reading the bullets.** One recorded ad prefaced

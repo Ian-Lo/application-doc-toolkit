@@ -1,4 +1,4 @@
-<!-- source-hash: 0eccd8e59663 CLAUDE.md -->
+<!-- source-hash: e89dcd3f8180 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in
@@ -40,7 +40,7 @@ Before presenting a finished resume, cover letter, or artifact:
 ## Mechanical checks — the orchestrator runs them, always
 
 **Applies to:** orchestrator. Drafting and review both depend on it and **neither can run it**:
-their tool allowlists have no Bash, deliberately, and the reviewer's `Read, Glob, Grep` limit is
+their tool allowlists have no Bash, deliberately, and the reviewer's `Read`-only limit is
 what enforces findings-never-edits. Don't add Bash to either to save a round-trip.
 
 **Run `python3 scripts/mechanical_checks.py <application-dir>` and paste its output into the
@@ -241,9 +241,9 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
   early on an observed trigger: report quality visibly dropping, or **a single review crossing
   ~200K subagent tokens**, which is worth a respawn on cost alone. Reasoning, re-checked against
   a full six-application pass:
-  - *Blast radius* is much smaller than drafting's. The reviewer's allowlist is `Read, Glob,
-    Grep`, so an interrupted review costs one regenerable report; an interrupted drafting
-    instance costs unwritten edits.
+  - *Blast radius* is much smaller than drafting's. The reviewer's allowlist is `Read` alone, so
+    an interrupted review costs one regenerable report; an interrupted drafting instance costs
+    unwritten edits.
   - *Transcript growth is real and is not offset.* Cost per review ran 92K → 132K → 159K → 190K
     → 218K across one pass. A **cold replacement, re-briefed from the tally table, produced the
     strongest review of that pass at 86K** — including the cross-application findings a cold
@@ -276,7 +276,7 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
   presenting the application as ready — don't wait to be asked. Act only on concrete,
   non-fabricating suggestions; log both what was acted on and what wasn't.
 - **The review agent reports findings, it never edits outgoing documents** (*review*). No
-  Edit/Write tool access on a review spawn — the `tools: Read, Glob, Grep` allowlist in
+  Edit/Write tool access on a review spawn — the `tools: Read` allowlist in
   `.claude/agents/review.md` is the enforcement, so don't add Write to it. Findings go back to
   the drafting agent, which applies them so fact-fidelity checking stays in one place. What the
   review checks is in **`docs/Review_Checklist.md`**, which the reviewer must read before

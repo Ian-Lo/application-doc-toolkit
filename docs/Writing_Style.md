@@ -1,4 +1,4 @@
-<!-- source-hash: 42444b24c0f4 docs/Writing_Style.md -->
+<!-- source-hash: eade86964ce3 docs/Writing_Style.md -->
 # Writing style — a voice model, and the LLM tells to avoid
 
 **Read this before drafting or revising any resume, cover letter, or screening-question
@@ -54,6 +54,100 @@ paper will attempt to examine X".
   however well the pivot is written.
 - **Copy the moves, not the prose surface.** Source writing usually contains real copy-editing
   errors. It is evidence of how the writer structures an argument, not a copy-editing model.
+
+## The closing line — where a published evidence page is available
+
+Where the candidate has a **published, checkable record** of their career facts, every new cover
+letter closes its body with one short paragraph that points at it and offers a call, sitting
+immediately above the valediction. Three moves: the record is published, it is there to be
+checked, there is a way to reach the candidate.
+
+**Build the paragraph from the three moves. Never from a model sentence.** This section originally
+carried one, written as an illustration. Its opening words then turned up at the head of three
+independently drafted closers — the rule seeded the convergence it exists to prevent, exactly as a
+fact library will seed a banned verb into drafts when it uses that verb in its own pre-written
+bullets. The model sentence has been removed rather than reworded, because the removal is the
+fix.
+
+**"Adapt the wording to each letter" was not specific enough, and this is measurable.** Three
+drafting agents, working independently on three different ads with no sight of each other's
+output, produced the same clause in all three letters with a single word swapped:
+
+> "It is public **precisely so it can be checked rather than taken on faith**"
+> "published **precisely so it can be verified rather than taken on faith**"
+> "it's public **precisely so it can be checked rather than taken on faith**"
+
+**So three phrasings are retired outright, and none returns:**
+
+- **"rather than taken on faith"**, and the "precisely so it can be [checked|verified]" frame it
+  travels with. Convergent from a standing start in 3 of 3 letters.
+- **"Happy to talk it through"** — a plain-register stand-in for the banned "I'd welcome the
+  opportunity to discuss", sitting in the banned closer's position.
+- **"The [record] linked above"** as the closer's opening words. Retired on the same evidence and
+  the same terms: three cold drafting instances, three different ads, no shared context, and all
+  three closers opened on the identical five words, two of the three differing by one adjective.
+  **That the retirement of the previous convergent phrasing was already in this file, and had been
+  read by all three agents, is the finding: naming a string retires the string, not the move.** The
+  paragraph must now enter from somewhere other than the record — the contact details, the reader's
+  own next step, or a specific artefact named earlier in the letter.
+
+**And one thing the closer must never do, found in the same round.** One of those letters wrote
+that the page was published "with **the vignettes** those paragraphs were built from" — naming
+the project's internal term for its fact library, which tells an external reader the letter was
+assembled from one. The closer points at a published page, so it is the exact place the boundary
+between *the candidate's published evidence* and *the drafting apparatus* is most likely to be
+crossed. **No outgoing document names the fact library, the agents, or the private corpus.** Write
+"the dated, sourced detail behind those paragraphs".
+
+**The lesson generalises past these two strings.** Hand several agents the same rule and the same
+three moves and they converge on the most obvious way to say it — and the most obvious way is what
+a screener reading two of the candidate's letters notices first. **Change the sentence's structure:
+where the paragraph enters, what governs the verb, where the contact detail lands. Not just its
+adjectives.** A synonym swap is not adaptation. If a phrasing feels like the natural one, that is
+the signal another agent already used it.
+
+Four boundaries, and the first matters most:
+
+- **Address the reader, not "your LLM".** The instinct here is to invite an employer's AI screening
+  tool to interrogate the link, and the offer itself is sound — published evidence, openly handed
+  over for scrutiny, the opposite of gaming a screen. But text addressed in the second person to an
+  automated reader is shaped exactly like a prompt-injection attempt, and a recruiter who notices it
+  reads it that way whatever it actually says. Wording that covers a screening tool without naming
+  one gets the same reach at none of that cost.
+- **Never promise the reader's tooling can reach it.** Most ATS and LLM screeners cannot fetch a URL
+  at all, and the candidate's own successful fetch proves only that the page exists — not that an
+  outside reader, unauthenticated, can open it. Invite scrutiny; never assert an automated check
+  will succeed.
+- **It is a closer, and "Avoid LLM tells" bans cliché closers.** This paragraph is the banned
+  wording's opposite in kind — it hands over evidence and a contact instead of asking for a meeting
+  — but it occupies the same position, so check it against that rule every time rather than
+  assuming the exception carries. It never becomes "I'd welcome the opportunity to discuss".
+- **Not retroactive.** Existing live documents gain the closing line when next touched for another
+  reason, never in a sweep.
+
+## The career break on a resume — bill the block for the activity
+
+**Two rules can pull in opposite directions here, and if no file resolves it they will be resolved
+differently in the same batch.** That is what happened: a disclosure ruling in the fact library
+contemplated a heading reading "Career break (20XX – present)", while "Handling gaps" below says a
+gap gets **"never its own heading"**. Two resumes in one batch solved it two different ways and
+both drew a finding. The ruling:
+
+**Bill the block for the activity, not the absence.** The heading names what was actually done —
+the volunteering, the study, the caring role, with its own dates — that bullet leads, and **the
+career-break disclosure is one sentence at the end of the block**. That satisfies both rules at
+once: the disclosure is present and plainly worded, and no heading is spent on the gap.
+
+Three things this does **not** license:
+
+- **Do not remove the disclosure.** Whether to disclose is the candidate's decision, not a
+  drafter's. Once made, it stands.
+- **Do not move the block to bury it.** Its chronological position is defensible; relocating it to
+  the end reads as concealment. Position is not the problem, billing is.
+- **Do not collapse two different spans into one.** A caring or study commitment that has **ended**
+  and a break from full-time work that is **still open** are two facts, and merging them
+  misstates both. Write only what the fact library licenses, and never write the underlying
+  personal circumstance beyond what the candidate has explicitly approved.
 
 ## Avoid LLM tells
 
@@ -118,7 +212,7 @@ application.
   meta-commentary, it recurs across letters in near-identical form, and performed honesty reads
   as a formula. State the fact; the plainness is the point, not a thing to point at.
 - **Check the ad's own wording before conceding anything.** A *desirable* is not an *essential*.
-  A slash ("Google Sheets/Excel") is one requirement, not two. "Or similar", "or equivalent
+  A slash ("Power BI/Tableau") is one requirement, not two. "Or similar", "or equivalent
   demonstrated technical capability", "preferably" and "ideally" are escape hatches the
   advertiser wrote deliberately — use them. One recorded ad prefaced its whole requirements
   list with "you will *ideally* bring" and the application conceded against it three times.

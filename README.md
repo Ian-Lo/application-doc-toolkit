@@ -31,7 +31,7 @@ been removed, the shapes of the failures have not.
    as passed that were false on disk — five times, always in the same direction. So the lint
    runs as a script, by the orchestrator, and its full output is pasted into the reviewer's
    brief. Script output cannot be misreported.
-2. **The reviewer never edits.** Its tool allowlist is `Read, Glob, Grep` — findings go back to
+2. **The reviewer never edits.** Its tool allowlist is `Read` alone — findings go back to
    the drafting role, which applies them, so fact-fidelity checking stays in one place. The
    allowlist is the enforcement, not a convention.
 3. **Accretion is checked subtractively.** For each claim: list what the fact library licenses,
