@@ -1,4 +1,4 @@
-<!-- source-hash: e89dcd3f8180 CLAUDE.md -->
+<!-- source-hash: 3ce8e4126eb9 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in
@@ -48,23 +48,18 @@ brief** — before every review spawn or message to a running reviewer, and agai
 after it applies a round of findings, which is when the report catches what the fixes just
 introduced. Use `--corpus` only for a deliberate cross-application sweep.
 
-**Paste the whole report, never a head of it.** A truncated report once dropped a whole section;
-the reviewer noticed the absence and spent part of its report asking whether the script was
-broken. The script was fine. A truncated report costs reviewer attention and invites a phantom
-bug — and if your subagents cannot run pattern searches themselves, the pasted report is the
-only pattern search they have.
+**Paste the whole report, never a head of it.** A truncated report has already cost a review to
+a phantom bug (`docs/Conventions_Rationale.md`) — and if your subagents cannot run pattern
+searches themselves, the pasted report is the only pattern search they have.
 
 It reports banned-string hits with line numbers, the cover letter's header block, link and
 bracketed-token atomicity, every duration phrase beside its canonical span from the fact
 library, and every section header beside its block contents.
 
-Two reasons this is the orchestrator's job rather than a checklist item for the reviewer:
-
-- **A self-reported check is not a check.** Five times on one real corpus a mechanical check was
-  reported as passed and was false on disk, every time in the same direction — run against the
-  change just made rather than against the rule. Script output cannot be misreported.
-- **It costs the reviewer zero tool calls instead of eight**, and every search result a subagent
-  pulls in is re-sent on every later turn of that review.
+Two reasons this is the orchestrator's job rather than a checklist item for the reviewer: **a
+self-reported check is not a check** (five instances on one real corpus, all failing the same
+way — `docs/Conventions_Rationale.md`), and **it costs the reviewer zero tool calls instead of
+eight**.
 
 This section is the canonical statement of the mechanical-checks rule; the copies in
 `docs/Review_Checklist.md`, `.claude/agents/drafting.md` and `.claude/agents/review.md` are
@@ -141,10 +136,9 @@ entries ("vignettes"). Select the vignettes whose tags match the job ad's stated
 write the summary around what actually matched, and don't paraphrase away the concrete
 specifics (numbers, named clients, named platforms) that make a vignette verifiable. Prioritise
 match to the ad first, token usage second — **read the whole fact library each time.** Selective
-reading is how a corpus under-claims: on one real corpus the library sat silent on a tool for
-days while the evidence was on disk, and a batch's later applications visibly drifted into
-re-using the previous draft's selection instead of re-matching against the new ad. A fresh full
-scan per ad is the point of respawning the drafting agent, not a cost of it.
+reading is how a corpus under-claims, and later drafts in a batch have measurably drifted into
+re-using the previous draft's selection (`docs/Conventions_Rationale.md`). A fresh full scan per
+ad is the point of respawning the drafting agent, not a cost of it.
 
 **Unconfirmed facts live outside the library**, in a shared open-questions file. The library
 holds only fact-checked material, and states that guarantee inside itself. Don't use an open
@@ -198,37 +192,26 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
 
   **Maximum ONE new application per instance, and one application per brief.** The second new
   application starts on a fresh agent, never the old one — and a single brief must never cover
-  two applications. The budget originally counted **instances** (three per instance); the
-  failure mode turned out to be **per-brief**: one brief covering two applications sat inside
-  the allowance while defeating the fresh-full-scan-per-ad rationale the budget exists to
-  enforce. The review found the library had been read once and the second ad matched against
-  the first draft's selection — two under-claims, measurable, from a brief that broke no rule
-  as written. The per-brief saving (roughly 11-13% of a whole-cycle cost) is given up
-  deliberately: it trades a known bounded cost for an unbounded silent one, because an
-  under-claim that ships is a screening call nobody hears about, and only the misses a review
-  *catches* are observable at all. **This applies to drafting only** — batching a review across
-  applications is cheaper and carries no measured quality cost, because the reviewer checks
-  written claims against their licensing sentence (a lookup) where drafting *selects* (a
-  search).
+  two applications. The failure mode is **per-brief**, not per-instance: one brief covering two
+  applications measurably matched the second ad against the first draft's selection, costing two
+  under-claims, and the per-brief saving is given up deliberately — a known bounded cost traded
+  against an unbounded silent one (full narrative in `docs/Conventions_Rationale.md`). **This
+  applies to drafting only** — batching a review across applications is cheaper and carries no
+  measured quality cost.
 
   **Reuse the same instance freely for revisions.** Applying review findings is not budgeted at
   all. A single instance may legitimately do one new application and then six rounds of
   revisions on it.
 
-  **The reason matters, and it is not "the instance holds the drafting context".** Measured on a
-  real corpus: a cold instance applied 18 findings to one application and 14 to another, **having
-  drafted neither**, and both passes went cleanly. What made them tractable was that the reviews
-  were **self-contained** — each finding named a line, quoted the offending text, and pointed at
-  the licensing fact, so the reviser only had to check the current text against the fact library,
-  never reconstruct why a vignette was chosen. **A well-structured review externalises the
-  context a reviser needs.** Revision is cheap for a cold instance when the review is that good,
-  and expensive when a finding requires drafting intent the review didn't capture.
+  **The exemption's reason: a well-structured review externalises the context a reviser needs.**
+  Measured on a real corpus — a cold instance applied 32 findings across two applications it had
+  not drafted, cleanly (`docs/Conventions_Rationale.md`). Stated the old way ("the instance
+  holds the drafting context"), the exemption would eventually be claimed for a badly-structured
+  review, where it does not hold.
 
   **The ~200K token trigger overrides both.** Retire on crossing roughly 200K subagent tokens
-  even mid-budget, and even if every remaining item is a revision. Measured per-unit spend has
-  run 119K → 152K → 193K → 233K within one instance while a cold replacement's first unit cost
-  116K and **found an unused vignette the warm instance had not reached for**. Transcript growth
-  is real and is not offset.
+  even mid-budget, and even if every remaining item is a revision — transcript growth is real,
+  is not offset, and has cost missed vignettes (series in `docs/Conventions_Rationale.md`).
 
   Retire gracefully, never mid-application: let the work in flight finish, ask the outgoing
   instance for its final queue echo and its cross-application observations, then spawn a fresh
@@ -244,11 +227,9 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
   - *Blast radius* is much smaller than drafting's. The reviewer's allowlist is `Read` alone, so
     an interrupted review costs one regenerable report; an interrupted drafting instance costs
     unwritten edits.
-  - *Transcript growth is real and is not offset.* Cost per review ran 92K → 132K → 159K → 190K
-    → 218K across one pass. A **cold replacement, re-briefed from the tally table, produced the
-    strongest review of that pass at 86K** — including the cross-application findings a cold
-    instance was previously assumed unable to produce. It adopted the settled/unsettled
-    classification from the file instead of re-litigating it.
+  - *Transcript growth is real and is not offset*, and a cold replacement re-briefed from the
+    tally table has produced the strongest review of a pass at ~40% of the warm cost —
+    cross-application findings included (series and detail in `docs/Conventions_Rationale.md`).
   - So the compounding state is held by **the table, not the instance**. Don't keep a reviewer
     alive to preserve something a file already holds.
 - **Write the reviewer's cross-application tallies into a tally table in a shared batch status

@@ -1,4 +1,4 @@
-<!-- source-hash: 3febd6f0af74 docs/Conventions_Rationale.md -->
+<!-- source-hash: bf20deef05bc docs/Conventions_Rationale.md -->
 # Why the conventions exist
 
 Background for the rules in `CLAUDE.md`. Read this when a rule looks arbitrary or you're
@@ -90,6 +90,25 @@ it just isn't sufficient on its own.
 Worth noting how close this came to hardening: the wrong cause was recorded in a handoff,
 which is the file a cold session reads first, and it carried a general claim about persistent
 subagents being untrustworthy. One more session and it would have been treated as settled.
+
+## Why the orchestrator runs the mechanical checks, and pastes the whole report
+
+Both halves of the rule in `CLAUDE.md`'s "Mechanical checks" section trace to measured failures
+on the real corpus.
+
+**The truncation incident.** The orchestrator once truncated the report, dropping a whole
+section; the reviewer noticed the absence and spent part of its report asking whether the
+script was broken and warning that a checklist step might be running unassisted across the
+batch. The script was fine. A truncated report costs reviewer attention and invites a phantom
+bug — hence "paste the whole report, never a head of it."
+
+**Why the orchestrator and not the reviewer.** Two reasons, both measured:
+
+- **A self-reported check is not a check.** Five times a mechanical check was reported as
+  passed and was false on disk, every time in the same direction — run against the change just
+  made rather than against the rule. Script output cannot be misreported.
+- **It costs the reviewer zero tool calls instead of eight**, and every search result a
+  subagent pulls in is re-sent on every later turn of that review.
 
 ## Why the drafting agent is budgeted, and why the budget changed
 
