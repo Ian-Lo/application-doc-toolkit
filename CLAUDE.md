@@ -22,6 +22,36 @@ When briefing a subagent for drafting, recon or review, name the relevant file i
 brief that omits the pointer loses those rules silently. Spawning the agent by its
 `.claude/agents/` type carries the pointer structurally and is the preferred route.
 
+## Working by conversation
+
+**Applies to:** orchestrator.
+
+The user of this repository may never open a terminal: they type sentences, and this section
+maps what they *mean* to what you run. **It is an intent table, not a string table** — the
+paraphrases in each row show the pattern, and the user's wording is not constrained. One rule
+above the table: **if the intent is unclear, ask exactly one question.** Never guess a company
+or role name into a folder, and never guess a filename field.
+
+| The user means | What you do |
+|---|---|
+| *Set up my fact library* — "set up my fact library from the template", "start my library", "I want to build my fact file" | Copy `Fact_Library_TEMPLATE.md` to `Fact_Library.md` and `Open_Questions_TEMPLATE.md` to `Open_Questions.md`, both at the project root, if they do not exist. Then ask, in one message, for the identity block: the name as it should appear on a cover letter, the contact line, and the `Name for filenames:` value (letters and digits, one underscore between name parts). Write them in, replacing the `>>> REPLACE` markers. |
+| *Propose vignettes* — "propose vignettes from this", "here is my old resume", "I uploaded my old resumes; move them into sources/ and propose vignettes" | If document files (PDF, text, Word) are lying loose at the repository root, move them into `sources/` first — GitHub's upload lands files wherever the user was standing, usually the root. Read the pasted text or every file under `sources/` (PDF and text read directly; a `.docx` cannot be read here — ask the user to re-upload it as PDF via Google Docs). Propose candidate entries in the template's shape, each with the question that would bound it. Write into `Fact_Library.md` **only what the user confirms**; park anything unsure in `Open_Questions.md`. |
+| *New application* — "start a new application for Northwind, Operations Coordinator", "I want to apply for X at Y", "another one for Acme" | Read the first `Name for filenames:` line in `Fact_Library.md`; if it still carries `>>> REPLACE`, ask for it first. Derive CamelCase company and role fields, run `python3 scripts/new_application.py --candidate <name> --company <Co> --role <Role>` (with `--abbrev` when the company name is long), and echo the folder name. |
+| *This is the ad* — "this is the ad, save it verbatim", "here's the job posting" | Write the pasted text into that folder's `posting.md` under **Verbatim ad text**, unchanged. No summary in its place. |
+| *Research, draft, review* — "research the company, then draft, then review", "write the resume and cover letter" | The workflow-order rules below: recon, then drafting, then review, with the mechanical checks pasted into every review brief. |
+| *Run the checks* — "run the checks", "lint it", "is it clean?" | `python3 scripts/mechanical_checks.py Applications/<folder> --facts Fact_Library.md`. Report the whole output, fix what drafting can fix, and say what remains. |
+| *Commit and push* — "commit and push", "save it to GitHub", "push it" | Commit the application folder and any library edits, then **push to the repository's default branch**. This is a private single-user repository with no reviewer to make a branch for. If the push is refused, say so in one line and tell the user: *press the session's **Create PR** button, then the green **Merge** button on github.com* — the files reach the repository either way. |
+| *PDF / printable / Word version* | There is no script for this. Point at `docs/Getting_Started.md` section 6: download the `.md` from github.com, open it in Google Docs, export PDF or DOCX. |
+
+Two standing rules that hold whether or not the user says the sentence:
+
+- **Always run the mechanical checks before presenting any draft as ready**, asked or not.
+- **Never write above the fence in `Fact_Library.md` without a fact the user confirmed in this
+  conversation.** A proposal is not a confirmation.
+
+`Fact_Library.md`, `Open_Questions.md` and `sources/` are the user's personal data. The
+repository stays private; nothing in it is published anywhere by this workflow.
+
 ## Document QA
 
 **Applies to:** whichever role is presenting — orchestrator normally; drafting and review need to
@@ -43,7 +73,7 @@ Before presenting a finished resume, cover letter, or artifact:
 their tool allowlists have no Bash, deliberately, and the reviewer's `Read`-only limit is
 what enforces findings-never-edits. Don't add Bash to either to save a round-trip.
 
-**Run `python3 scripts/mechanical_checks.py <application-dir> --facts <fact-library>` and paste
+**Run `python3 scripts/mechanical_checks.py <application-dir> --facts Fact_Library.md` and paste
 its output into the brief** — before every review spawn or message to a running reviewer, and
 again for drafting after it applies a round of findings, which is when the report catches what
 the fixes just introduced. Use `--corpus` only for a deliberate cross-application sweep.
@@ -103,6 +133,40 @@ Run the test suite after changing anything in `scripts/`, and before committing 
 not after application work; no test touches application documents. **Adding a script is a
 two-file change: the script and its `test_<name>.py`.**
 
+## Application file structure
+
+**Applies to:** orchestrator; the filename convention is drafting's and is repeated in
+`.claude/agents/drafting.md`.
+
+For every job application:
+
+```
+Applications/YYYY-MM-DD_Company_RoleTitle/
+    posting.md                                       (saved ad content, source URL, screening questions)
+    <candidate>_Resume_YYMMDD_Company_Role.md
+    <candidate>_CoverLetter_YYMMDD_Company_Role.md
+    status.md                                        (status, gap notes, things to verify before submitting)
+    decisions.md                                     (optional; dated updates once they accumulate)
+    Company_Context.md                               (written by recon; symlinked when the company recurs)
+```
+
+Resume/cover-letter filename field order is fixed:
+**[candidate]_[Resume|CoverLetter]_[date YYMMDD]_[company, abbreviated]_[role]**, e.g.
+`Sam_Okafor_Resume_260302_Northwind_OperationsCoordinator.md`. The candidate field comes from
+the `Name for filenames:` line in `Fact_Library.md`; company and role are CamelCase with no
+spaces or underscores inside the field, because the underscore is the field separator.
+
+**Scaffold with `python3 scripts/new_application.py --candidate <name> --company <Co> --role
+<Role> [--abbrev <Co>]`**, never by hand — it gets both date formats right (the folder takes
+the four-digit year, the document a two-digit one) and refuses a role containing a space or
+underscore, which would silently shift every filename field after it. It creates `posting.md`
+and `status.md` seeds plus the two correctly-named empty documents, and deliberately does
+**not** create `Company_Context.md` or `decisions.md`; where recon for that company already
+exists it prints the `ln -s` command and leaves the reuse-vs-stale judgement to you.
+
+`Fact_Library.md`, `Open_Questions.md` and `sources/` stay at the project root, shared across
+applications — never duplicated per-folder.
+
 ## Job posting capture — verbatim, always
 
 **Applies to:** orchestrator — capture is the orchestrator's job, never a subagent's.
@@ -154,8 +218,12 @@ one living in a single status file is the failure the shared file exists to prev
 
 Read `docs/Writing_Style.md` first.
 
+**The fact library is `Fact_Library.md` at the project root** — one file, built from
+`Fact_Library_TEMPLATE.md` by the procedure in `docs/Fact_Library_Guide.md`. Its identity
+block is the source of the cover-letter header and of the candidate field in every filename.
+
 Don't start a tailored resume from any single master resume and trim it down. Build up instead
-from a fact library — a pre-distilled, tagged collection of atomic, fact-checked achievement
+from the fact library — a pre-distilled, tagged collection of atomic, fact-checked achievement
 entries ("vignettes"). Select the vignettes whose tags match the job ad's stated requirements,
 write the summary around what actually matched, and don't paraphrase away the concrete
 specifics (numbers, named clients, named platforms) that make a vignette verifiable. Prioritise
@@ -164,7 +232,7 @@ reading is how a corpus under-claims, and later drafts in a batch have measurabl
 re-using the previous draft's selection (`docs/Conventions_Rationale.md`). A fresh full scan per
 ad is the point of respawning the drafting agent, not a cost of it.
 
-**Unconfirmed facts live outside the library**, in a shared open-questions file. The library
+**Unconfirmed facts live outside the library**, in `Open_Questions.md` at the project root. The library
 holds only fact-checked material, and states that guarantee inside itself. Don't use an open
 question until the candidate answers it, and never write a new one into the library: one
 unconfirmed entry voids the trust guarantee for the whole file. The open-questions file is also
