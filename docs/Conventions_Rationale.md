@@ -388,3 +388,39 @@ two inputs to drafting are fenced (the fact library guarantees fact-checked cont
 that guarantee in its own text; the saved posting is verbatim by construction) and recon is not,
 while drafting reads all three alike. A check that fires at review fires after the claim is
 written; provenance discipline is the only thing that stops it being written.
+
+## Updates reach a template copy only through a path split
+
+A private copy made with GitHub's *Use this template* shares no commit with the toolkit and
+has no fork relationship, so *Sync fork* is unavailable (a fork of a public repository cannot
+be private anyway), a merge has no base, and nothing in the copy records where it came from.
+Noticed 2026-09-04 on the first copy made from the template: the guide, `CLAUDE.md` and the
+README said nothing about updates, so a published change would never have reached it.
+
+The route that works needs no shared history: fetch the public `main`, then write its versions
+of the toolkit's own files over the copy's, by explicit file list (`git restore
+--source=FETCH_HEAD`). That is safe only because of an invariant the rest of the toolkit has to
+keep: **personal data lives only at the root (`Fact_Library.md`, `Open_Questions.md`) and under
+`Applications/` and `sources/`; toolkit files live only under the replaced paths** (`CLAUDE.md`,
+`README.md`, `LICENSE`, `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates). The
+two lists are code in `scripts/update_toolkit.py`, with a test that holds them disjoint, so a
+guide change that put user data under `docs/` would fail a test rather than be overwritten one
+update later.
+
+Three consequences were decided rather than left to happen:
+
+- **The update never deletes.** `git restore` with a directory pathspec removes tracked files
+  the source lacks — which would take a user's note committed under `docs/` along with a
+  renamed checklist. The script therefore names files, never directories, and reports what it
+  left behind. A stale toolkit file lingering is the smaller harm.
+- **User edits to toolkit files are overwritten, and the guide says so.** The user is not meant
+  to edit them; a three-way merge to preserve edits would need a base the copy does not have,
+  and the edit survives in git history. The script refuses while such an edit is uncommitted, so
+  an overwrite is never of work the user has not yet saved.
+- **The shipped suites run after every update, and a failure rolls the update back.** A broken
+  publish then costs the user one message instead of a broken toolkit.
+
+The *What changed* section of the public README is the change log the update reads: one line
+per publish, newest first, and the update prints the lines the copy did not have. An entry that
+needs a matching edit to the user's fact library carries `LIBRARY EDIT:` so the orchestrator
+proposes it, rather than the user discovering it from a lint failure.

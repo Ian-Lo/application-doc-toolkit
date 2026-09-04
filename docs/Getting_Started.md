@@ -29,31 +29,44 @@ Your copy will hold your employment history, so it must be **private**, and it m
 private: git history is permanent, and a repository that was public for an hour has published
 its contents for good.
 
-1. Open the toolkit's page on github.com (the link you were sent).
-2. Press the green **Use this template** button, then **Create a new repository**.
-3. Give it a name (`job-applications` is fine).
-4. Choose **Private**. This is the step that matters.
-5. Press **Create repository**.
+1. **Sign in to github.com first** (create an account if you have none). Signed out, the
+   toolkit's page shows only *Fork* and *Star*; the button you need does not appear.
+2. Open the toolkit's page on github.com (the link you were sent).
+3. Press the green **Use this template** button, then **Create a new repository**.
+4. Give it a name (`job-applications` is fine).
+5. Find the **Choose visibility** box. It shows a button that says **Public** with a small
+   arrow and looks like a label; press it and change it to **Private**. This is the one
+   step in this guide that cannot be undone later, so check it says Private before you go on.
+6. Press **Create repository**.
 
 You now have your own copy. Nothing you do in it is visible to anyone else, including the
 toolkit's author.
 
 ## 3. Connect Claude Code to it, once
 
-1. Open **claude.ai/code** and sign in with your Claude account.
-2. When asked, authorise the **Claude GitHub App**. This is how Claude reads and writes your
-   repository. Approve access to the private repository you just made; you do not need to
-   install anything on the repository itself.
-3. Choose your repository from the list. The first thing you see is a box asking what to
-   work on, not a chat: type the first sentence from section 4 into it and press **Start**.
-   After that it is a conversation.
-4. Leave the **permission mode** on its default setting. The toolkit pre-approves every
-   command this guide will make Claude run, and the web searches and page fetches that company
-   research needs, so you should rarely see a prompt.
+1. Open **claude.ai/code** and sign in with your Claude account. The page is headed *Set up
+   and start coding* and shows a large **Download** card with buttons for Terminal, VS Code
+   and others. Ignore all of that: the browser route is the small **Continue on web** link
+   at the bottom of the page.
+2. Connect GitHub. The next page says *Code with Claude anywhere* and offers **Continue with
+   GitHub**; press it (do **not** press *Skip for now* — if you did, a blue box titled *Two
+   steps to work in your repo* appears later with a **Connect GitHub** button, which does the
+   same thing). Sign in to GitHub if asked. When GitHub asks which repositories the **Claude
+   GitHub App** may access, choose the private repository you just made, then press
+   **Install** or **Authorize**. This is how Claude reads and writes your copy.
+3. Press **Select repository** under the message box and choose your repository. The first
+   thing you see is a box asking what to work on, not a chat: type the first sentence from
+   section 4 into it and press **Start**. After that it is a conversation.
+4. Permissions. On first visit a notice explains that **Auto mode** is the default: Claude
+   runs the actions it judges lower-risk and blocks the rest. Press **Got it** and leave it
+   on Auto to begin with. The toolkit pre-approves every command this guide will make Claude
+   run, and the web searches and page fetches that company research needs.
 
-If a box asks permission and it names a file in your project or a website, choose **Allow**.
-You can choose "always allow" safely — this project runs in a separate cloud computer with
-only your private copy on it.
+If Claude reports that an action was **blocked**, switch the mode selector next to the message
+box from **Auto** to **Default** and type the same sentence again. In Default mode a box may
+ask permission: if it names a file in your project or a website, choose **Allow**. You can
+choose "always allow" safely — this project runs in a separate cloud computer with only your
+private copy on it.
 
 ## 4. Build your fact library, by conversation
 
@@ -132,7 +145,30 @@ The resume and cover letter are plain-text files (`.md`). Google Docs opens them
 
 Check the PDF before you upload it anywhere: it is your name on it.
 
-## 7. What the toolkit never does
+## 7. Keep the toolkit up to date
+
+The toolkit's author keeps improving it, but your private copy has no link back to the
+original: it is a copy, not a fork, so nothing updates it on its own. When you want the
+latest version, type:
+
+**"Update the toolkit from github.com/Ian-Lo/application-doc-toolkit."**
+
+Claude fetches the toolkit and replaces its own files — the rules, the guides, the scripts and
+the templates — with the current versions, runs their tests, and tells you what changed since
+your copy was last updated. Then say **"commit and push"** as usual.
+
+Three things to know:
+
+- **Your own files are never touched:** `Fact_Library.md`, `Open_Questions.md`, everything
+  under `Applications/` and everything under `sources/`.
+- **Toolkit files are replaced whole.** You are not meant to edit them; if you did, the edit
+  is overwritten (it stays in your repository's history, so nothing is lost for good). If
+  Claude says it refused because a toolkit file has uncommitted changes, say "commit and push"
+  first, then ask again.
+- **Occasionally a change needs a matching edit to your fact library** — a new line the checks
+  read, say. The update names it, and Claude proposes the edit and waits for your yes.
+
+## 8. What the toolkit never does
 
 It never submits anything. Every application form is yours to fill in, and every document is
 yours to read before it goes anywhere. The reviewer role is thorough, but it is checking the

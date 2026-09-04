@@ -41,6 +41,7 @@ or role name into a folder, and never guess a filename field.
 | *Research, draft, review* — "research the company, then draft, then review", "write the resume and cover letter" | The workflow-order rules below: recon, then drafting, then review, with the mechanical checks pasted into every review brief. |
 | *Run the checks* — "run the checks", "lint it", "is it clean?" | `python3 scripts/mechanical_checks.py Applications/<folder> --facts Fact_Library.md`. Report the whole output, fix what drafting can fix, and say what remains. |
 | *Commit and push* — "commit and push", "save it to GitHub", "push it" | Commit the application folder and any library edits, then **push to the repository's default branch**. This is a private single-user repository with no reviewer to make a branch for. If the push is refused, say so in one line and tell the user: *press the session's **Create PR** button, then the green **Merge** button on github.com* — the files reach the repository either way. |
+| *Update the toolkit* — "update the toolkit from github.com/Ian-Lo/application-doc-toolkit", "get the latest toolkit", "is there a newer version?" | `python3 scripts/update_toolkit.py`. It fetches the public repository and replaces the toolkit's own files wholesale (`CLAUDE.md`, `README.md`, `LICENSE`, `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates), runs the shipped test suites, and prints a diff summary plus the README's *What changed* entries this copy did not have. Report those entries to the user in full. An entry marked `LIBRARY EDIT:` names a change `Fact_Library.md` needs — **propose the edit and wait for a yes**; never make it silently. The script never touches `Fact_Library.md`, `Open_Questions.md`, `Applications/` or `sources/`. If it refuses because a toolkit file has uncommitted changes, do *commit and push* first and run it again. Afterwards the user says *commit and push* as usual. |
 | *PDF / printable / Word version* | There is no script for this. Point at `docs/Getting_Started.md` section 6: download the `.md` from github.com, open it in Google Docs, export PDF or DOCX. |
 
 Two standing rules that hold whether or not the user says the sentence:
@@ -51,6 +52,14 @@ Two standing rules that hold whether or not the user says the sentence:
 
 `Fact_Library.md`, `Open_Questions.md` and `sources/` are the user's personal data. The
 repository stays private; nothing in it is published anywhere by this workflow.
+
+**Two kinds of file, and the split is load-bearing.** Personal data lives only at the root
+(`Fact_Library.md`, `Open_Questions.md`) and under `Applications/` and `sources/`; toolkit
+files live only under the paths the update replaces (`CLAUDE.md`, `README.md`, `LICENSE`,
+`.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates). `scripts/update_toolkit.py`
+holds both lists as code and its test suite holds them disjoint. **No rule in this file or in
+the guide may ever put user data under `docs/`, `scripts/` or `.claude/`**, and the user is not
+meant to edit toolkit files: an update overwrites them (why: `docs/Conventions_Rationale.md`).
 
 ## Document QA
 
@@ -131,7 +140,9 @@ by design.
 
 Run the test suite after changing anything in `scripts/`, and before committing such a change —
 not after application work; no test touches application documents. **Adding a script is a
-two-file change: the script and its `test_<name>.py`.**
+two-file change: the script and its `test_<name>.py`.** `scripts/update_toolkit.py` runs every
+`scripts/test_*.py` after an update and rolls the update back if one fails, so a shipped suite
+must pass in a copy that holds no application work.
 
 ## Application file structure
 

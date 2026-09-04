@@ -14,6 +14,16 @@ been removed, the shapes of the failures have not.
 nothing to a finished resume and cover letter, in the browser, with no installs. Then
 [`docs/Fact_Library_Guide.md`](docs/Fact_Library_Guide.md) for the file everything is built from.
 
+## What changed
+
+<!-- One line per publish, newest first, dated. `scripts/update_toolkit.py` prints the lines a
+     private copy did not have. A line that needs a matching edit to the user's Fact_Library.md
+     carries `LIBRARY EDIT:` followed by the edit. -->
+- 2026-09-04 — Toolkit updates for private copies: say *"update the toolkit"*; `scripts/update_toolkit.py` fetches this repository, replaces the toolkit's own files, runs the tests and reports this section's new lines (`docs/Getting_Started.md` §7).
+- 2026-09-04 — `docs/Getting_Started.md` §2–§3 corrected against the live github.com and claude.ai/code screens: sign in to GitHub first, the visibility control is a dropdown that defaults to Public, *Continue on web* is the browser route, and the default permission mode is Auto.
+- 2026-09-04 — Starter kit: `docs/Getting_Started.md`, `docs/Fact_Library_Guide.md`, the two `_TEMPLATE.md` files, `scripts/new_application.py` with a `--candidate` parameter, and the intent table in `CLAUDE.md`.
+- 2026-09-04 — The ad-vocabulary check (`mechanical_checks.py --facts`) and `scripts/ad_vocab_stoplist.txt`; eleven documents re-derived from their private sources.
+
 ## What's in it
 
 | Path | What it is |
@@ -29,6 +39,8 @@ nothing to a finished resume and cover letter, in the browser, with no installs.
 | `docs/Conventions_Rationale.md` | Why each rule exists — the incident behind it, so rules are revised knowingly rather than eroded |
 | `scripts/new_application.py` | Scaffolds an application folder with the convention files and correctly-named empty documents; the candidate name is a parameter |
 | `scripts/test_new_application.py` | Its test suite |
+| `scripts/update_toolkit.py` | Brings a private copy's toolkit files up to date from this repository — explicit path list, never touches personal files, runs the shipped suites and rolls back if one fails |
+| `scripts/test_update_toolkit.py` | Its test suite, including the toolkit/personal path split |
 | `scripts/mechanical_checks.py` | One-command document lint: banned strings, header block, link atomicity, duration phrases beside their canonical spans, section headers beside their bodies, and — given `--facts` — the ad vocabulary your fact library does not license |
 | `scripts/banned_patterns.txt` | The pattern file, with per-pattern rationale in its comments |
 | `scripts/ad_vocab_stoplist.txt` | The ad-vocabulary check's noise floor: function words and role-generic phrases whose adoption carries no claim |
@@ -59,7 +71,8 @@ agent definitions and `CLAUDE.md` load automatically), but the scripts stand alo
 ```
 python3 scripts/new_application.py --candidate Sam_Okafor --company Northwind --role OperationsCoordinator
 python3 scripts/mechanical_checks.py Applications/<folder> --facts Fact_Library.md
-python3 scripts/test_mechanical_checks.py && python3 scripts/test_new_application.py
+python3 scripts/test_mechanical_checks.py && python3 scripts/test_new_application.py && python3 scripts/test_update_toolkit.py
+python3 scripts/update_toolkit.py --dry-run
 ```
 
 The lint finds the outgoing documents by filename (`*Resume*`, `*CoverLetter*`) and the saved
