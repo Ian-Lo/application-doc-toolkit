@@ -1,4 +1,4 @@
-<!-- source-hash: 3ce8e4126eb9 CLAUDE.md -->
+<!-- source-hash: 5f356baa46e0 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in
@@ -43,18 +43,42 @@ Before presenting a finished resume, cover letter, or artifact:
 their tool allowlists have no Bash, deliberately, and the reviewer's `Read`-only limit is
 what enforces findings-never-edits. Don't add Bash to either to save a round-trip.
 
-**Run `python3 scripts/mechanical_checks.py <application-dir>` and paste its output into the
-brief** — before every review spawn or message to a running reviewer, and again for drafting
-after it applies a round of findings, which is when the report catches what the fixes just
-introduced. Use `--corpus` only for a deliberate cross-application sweep.
+**Run `python3 scripts/mechanical_checks.py <application-dir> --facts <fact-library>` and paste
+its output into the brief** — before every review spawn or message to a running reviewer, and
+again for drafting after it applies a round of findings, which is when the report catches what
+the fixes just introduced. Use `--corpus` only for a deliberate cross-application sweep.
 
 **Paste the whole report, never a head of it.** A truncated report has already cost a review to
 a phantom bug (`docs/Conventions_Rationale.md`) — and if your subagents cannot run pattern
 searches themselves, the pasted report is the only pattern search they have.
 
+**Generate it in the same breath as the paste. A report is stale the moment either input
+changes** — the documents, or `scripts/banned_patterns.txt`. On the source corpus a report
+generated early in a pass was pasted into a review brief later in the same pass, after a new
+pattern had been installed in between: it reported `clean` on a string the live pattern matches,
+and the reviewer opened its report by saying the brief could not be trusted. The orchestrator
+holds both inputs and is the only role that can see them diverge. **Never carry a report forward
+across a pattern-file edit; re-run it.**
+
+**The same asymmetry, generalised: a subagent's file read is a snapshot, and a long review
+outlives it. When an agent reports that a file does not contain something, check the file before
+acting.** On the source corpus, a parallel session committed a batch of answered questions into
+the fact library while two reviews were in flight; both had read the file at spawn, and one
+asserted as a blocking finding that the answers had not been written, instructing that drafting
+stop. The content was on disk the whole time. A subagent cannot detect this and should not be
+asked to — re-reading a large library at the end of every review is not affordable — and
+messaging in-flight agents about the change is worth doing but is not a control: both were
+messaged, and neither acted on it before finishing. A confidently-argued negative is the shape
+most likely to trigger expensive remediation, which is exactly why it earns the one status check
+and one search that settle it.
+
 It reports banned-string hits with line numbers, the cover letter's header block, link and
 bracketed-token atomicity, every duration phrase beside its canonical span from the fact
-library, and every section header beside its block contents.
+library, every section header beside its block contents, and — when `--facts` names the
+library — **ad vocabulary the library does not license**: phrases in both the saved posting
+and the outgoing documents but absent from the library, which predicted 4 of 10 over-claims
+when measured on the source corpus. That last one is warn-style: a hit is a question for the
+reviewer, not a defect, and proper nouns from recon show up in it routinely.
 
 Two reasons this is the orchestrator's job rather than a checklist item for the reviewer: **a
 self-reported check is not a check** (five instances on one real corpus, all failing the same

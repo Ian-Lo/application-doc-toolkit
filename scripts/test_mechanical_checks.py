@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 7643c21fe4f4 scripts/test_mechanical_checks.py
+# source-hash: 9b8217ae8c34 scripts/test_mechanical_checks.py
 """Tests for banned_patterns.txt and mechanical_checks.py.
 
     python3 test_mechanical_checks.py
@@ -43,6 +43,42 @@ PROBES = {
          "what this role asks for", "the work this role is about"],
         ["this roles needs", "the role needs a writer", "this role, needs"],
     ),
+    r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,15}\b(asks?|is asking|needs|wants) for someone": (
+        ["your ad asks for someone who", "the ad is asking for someone with",
+         "this posting wants for someone", "this role needs for someone able to"],
+        ["your advice asks for clarity", "the address needs someone to confirm it",
+         "this role is demanding but rewarding"],
+    ),
+    r"\b(asks?|is asking|wants) for someone who\b": (
+        ["asks for someone who can", "is asking for someone who has",
+         "wants for someone who understands"],
+        ["asks for clarification on the role", "wants someone with the right background"],
+    ),
+    r"\ba role like this one\b": (
+        ["a role like this one rewards", "in a role like this one"],
+        ["a role unlike anything I've held", "this one role stood out"],
+    ),
+    r"\bthe same (discipline|rhythm|shape|instinct)\b[^.]{0,40}\byour\b": (
+        ["the same discipline your external-worker provisioning work needs",
+         "the same rhythm your team's release cycle runs on",
+         "the same shape your audit process takes",
+         "the same instinct your escalation path relies on"],
+        # "the same discipline" on its own, or attached to a third-party noun rather than
+        # "your", must not trip - the formula is specifically the second-person comparison.
+        ["the same discipline I brought to the platform migration",
+         "the same rhythm as the previous engagement", "a similar discipline to theirs"],
+    ),
+    r"\banswers?\b[^.]{0,20}\bthe ad's\b": (
+        ["answer the ad's interest in high-throughput processing directly",
+         "answers the ad's non-functional-testing bar"],
+        ["answers a genuine question", "the ad's own wording is direct",
+         "answer to the selection criteria"],
+    ),
+    r"\b(your|this) ad\b": (
+        ["your ad names Procurement directly", "this ad's essential-experience list",
+         "in your ad", "reading this ad closely"],
+        ["your advice was useful", "this address is current", "your address book"],
+    ),
     "the closest thing on my record to": (
         ["the closest thing on my record to a formal writing sample"],
         ["the closest match on my record"],
@@ -50,6 +86,27 @@ PROBES = {
     r"\bsign-?off\b": (
         ["procurement sign-off", "went to signoff", "sign-off was granted"],
         ["signed off on it", "signing the contract", "design office"],
+    ),
+    r"\b(dated|sourced)[a-z, ]{0,20}\bdetail behind\b": (
+        # The three variants measured across one pass, plus the retired style-guide
+        # prescription that seeded all of them.
+        ["The dated detail behind every claim above",
+         "the dated, sourced detail behind every line above",
+         "the dated, sourced detail behind those paragraphs"],
+        # "detail behind" on its own is ordinary English and must not trip; nor may either
+        # adjective when it is not attached to that noun phrase.
+        ["the detail behind the number", "sourced from the vendor's own figures",
+         "a dated reference in the appendix",
+         "dated, sourced, and checked against the transcript"],
+    ),
+    r"\b(detail|record|evidence|backing|substance|version)\b[a-z, ]{0,15}\bbehind (each|every|those)\b": (
+        # The two measured evasions of the narrower pattern above, plus the retired stem itself.
+        ["the fuller record behind each claim above",
+         "the dated, sourced detail behind every claim above",
+         "the evidence behind those paragraphs"],
+        # "behind" without the frame, and the frame without a definite quantifier, must not trip.
+        ["the record behind the decision", "the story behind every claim",
+         "the reasoning behind each recommendation", "left the paperwork behind"],
     ),
     # --- tell ---
     "I'm writing to apply": (["I'm writing to apply for the role"], ["I am applying for"]),
@@ -272,7 +329,8 @@ class TestScriptRuns(unittest.TestCase):
             r = subprocess.run([sys.executable, CHECKS, app],
                                capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, r.stderr)
-            for section in ("BANNED STRINGS", "ATOMICITY", "DURATIONS", "SECTION HEADERS"):
+            for section in ("BANNED STRINGS", "ATOMICITY", "DURATIONS", "SECTION HEADERS",
+                            "AD VOCABULARY"):
                 self.assertIn(section, r.stdout)
 
     def test_corpus_sweep_exits_clean(self):
@@ -292,6 +350,188 @@ class TestScriptRuns(unittest.TestCase):
                            capture_output=True, text=True)
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("FATAL", r.stderr)
+
+
+class TestAdVocabulary(unittest.TestCase):
+    """Phrases in the ad AND the documents, absent from the facts file.
+
+    The four measured cases are the specification, not an illustration: on the source corpus
+    this pattern predicted 4 of 10 over-claims in one pass, and one of the four
+    ("reconciliation") is a single word, which is why the check is not purely multi-word.
+    """
+
+    MEASURED = ["data fusion", "reconciliation", "reporting documentation",
+                "translating business requirements into dashboards"]
+
+    def setUp(self):
+        self.stopwords, self.phrases = mc.load_stoplist(mc.STOPLIST)
+
+    def run_check(self, ad, doc, facts="Nothing relevant here."):
+        return mc.ad_vocabulary(ad, [doc], facts, self.stopwords, self.phrases)
+
+    def test_the_four_measured_phrases_are_all_surfaced(self):
+        """The regression that matters. If this ever goes quiet, the check is decorative."""
+        for phrase in self.MEASURED:
+            with self.subTest(phrase=phrase):
+                ad = "The role requires %s across the group." % phrase
+                doc = "I have delivered %s in regulated environments." % phrase
+                self.assertIn(phrase, self.run_check(ad, doc))
+
+    def test_a_phrase_the_facts_file_licenses_is_not_reported(self):
+        ad = "We need data fusion across sources."
+        doc = "I delivered data fusion work."
+        self.assertEqual(
+            self.run_check(ad, doc, "The candidate delivered data fusion at a regulator."), [])
+
+    def test_a_phrase_only_in_the_ad_is_not_reported(self):
+        """The check is about adoption. An unadopted ad phrase is not a finding."""
+        ad = "We need data fusion across sources."
+        doc = "I built reporting pipelines."
+        self.assertEqual(self.run_check(ad, doc), [])
+
+    def test_a_phrase_only_in_the_documents_is_not_reported(self):
+        ad = "We need reporting pipelines."
+        doc = "I delivered data fusion work."
+        self.assertEqual(self.run_check(ad, doc), [])
+
+    def test_longest_match_wins(self):
+        phrase = "translating business requirements into dashboards"
+        found = self.run_check("The role is %s." % phrase, "I did %s." % phrase)
+        self.assertIn(phrase, found)
+        self.assertNotIn("business requirements", found)
+        self.assertNotIn("requirements into dashboards", found)
+
+    def test_ngrams_do_not_span_a_sentence_boundary(self):
+        ad = "We build dashboards. Reconciliation matters here."
+        doc = "I build dashboards. Reconciliation matters here."
+        self.assertNotIn("dashboards reconciliation", self.run_check(ad, doc))
+
+    def test_short_words_are_not_reported_alone(self):
+        """UNIGRAM_MIN_LEN. Without it every shared short word is a hit."""
+        ad = "We need reports and charts."
+        doc = "I built reports and charts."
+        found = self.run_check(ad, doc)
+        self.assertNotIn("reports", found)
+        self.assertNotIn("charts", found)
+
+    def test_a_phrase_may_not_start_or_end_with_a_stopword(self):
+        ad = "Responsible for the reporting of results."
+        doc = "Responsible for the reporting of results."
+        for phrase in self.run_check(ad, doc):
+            toks = phrase.split()
+            self.assertNotIn(toks[0], self.stopwords, phrase)
+            self.assertNotIn(toks[-1], self.stopwords, phrase)
+
+    def test_cover_letter_header_block_is_excluded(self):
+        """Addressing metadata is dense in recon's proper nouns and makes no claims."""
+        letter = ("# Jane Doe\n\nSpringfield\n\nRe: Data Analyst\n\n"
+                  "Dear Alex Example,\n\nI have delivered data fusion work.\n")
+        for name in ("Jane_Doe_CoverLetter_260101_X_Y.md", "Jane_Doe_Cover_Letter_260101_X_Y.md",
+                     "jane-doe-coverletter.md"):
+            with self.subTest(name=name):
+                kept = mc.claim_text(name, letter)
+                self.assertNotIn("Alex", kept)
+                self.assertIn("data fusion", kept)
+
+    def test_resume_is_never_truncated_by_claim_text(self):
+        resume = "# Jane Doe\n\nDear reader, this line stays.\n\nExperience.\n"
+        self.assertEqual(mc.claim_text("Jane_Doe_Resume_260101_X_Y.md", resume), resume)
+
+    def test_no_posting_yields_no_crash(self):
+        self.assertEqual(mc.ad_vocabulary("", ["anything"], "", self.stopwords, self.phrases), [])
+
+
+class TestAdVocabStoplist(unittest.TestCase):
+    """Two gates on ad_vocab_stoplist.txt, guarding opposite failures.
+
+    Under-suppression is noise, which is annoying. OVER-suppression is a silent false clean,
+    which is the failure mode this whole script exists to prevent - so the second test pins
+    the four measured phrases against the stop-list permanently.
+    """
+
+    def setUp(self):
+        self.stopwords, self.phrases = mc.load_stoplist(mc.STOPLIST)
+
+    def test_every_multi_word_entry_is_actually_suppressed(self):
+        """Per-entry probe. Adding an entry probes it; there is no unprobed entry."""
+        for phrase in sorted(self.phrases):
+            with self.subTest(phrase=phrase):
+                ad = "The role involves %s daily." % phrase
+                doc = "I have done %s daily." % phrase
+                found = mc.ad_vocabulary(ad, [doc], "irrelevant", self.stopwords, self.phrases)
+                self.assertNotIn(phrase, found)
+
+    def test_the_stoplist_never_suppresses_a_measured_over_claim(self):
+        """The over-suppression gate. These four are why the check exists."""
+        for phrase in TestAdVocabulary.MEASURED:
+            with self.subTest(phrase=phrase):
+                self.assertNotIn(phrase, self.phrases)
+                for token in phrase.split():
+                    self.assertNotIn(token, self.phrases)
+                if " " not in phrase:
+                    self.assertNotIn(phrase, self.stopwords)
+
+    def test_entries_are_lowercase_and_unique(self):
+        seen = []
+        with open(mc.STOPLIST, encoding="utf-8") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line or line.startswith("#"):
+                    continue
+                self.assertEqual(line, line.lower(), "not lowercase: %r" % line)
+                self.assertNotIn(line, seen, "duplicate entry: %r" % line)
+                seen.append(line)
+
+    def test_both_kinds_of_entry_are_present(self):
+        self.assertTrue(self.stopwords, "no single-word entries parsed")
+        self.assertTrue(self.phrases, "no multi-word entries parsed")
+
+
+class TestScriptRunsAdVocab(unittest.TestCase):
+    """The AD VOCABULARY section end to end, on a throwaway fixture with a posting."""
+
+    POSTING = "# Acme - Data Analyst\n\nThe role requires data fusion across the group.\n"
+    RESUME = ("# Jane Doe\n\n## Experience\n\n"
+              "- Delivered data fusion work (Jan 2020 – Jun 2022).\n")
+    FACTS = "## Acme — Analyst (Jan 2020 – Jun 2022)\n\n- Built reporting pipelines.\n"
+
+    def _fixture(self, td, posting=True):
+        app = os.path.join(td, "2026-01-01_Acme_DataAnalyst")
+        os.makedirs(app)
+        with open(os.path.join(app, "Jane_Doe_Resume_260101_Acme.md"), "w") as fh:
+            fh.write(self.RESUME)
+        if posting:
+            with open(os.path.join(app, "posting.md"), "w") as fh:
+                fh.write(self.POSTING)
+        facts = os.path.join(td, "facts.md")
+        with open(facts, "w") as fh:
+            fh.write(self.FACTS)
+        return app, facts
+
+    def test_adopted_phrase_is_reported_with_facts(self):
+        with tempfile.TemporaryDirectory() as td:
+            app, facts = self._fixture(td)
+            r = subprocess.run([sys.executable, CHECKS, app, "--facts", facts],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("AD VOCABULARY NOT LICENSED BY THE FACTS FILE", r.stdout)
+            self.assertIn("data fusion", r.stdout)
+            self.assertIn("warn", r.stdout)
+
+    def test_without_facts_the_section_says_why_it_cannot_compare(self):
+        with tempfile.TemporaryDirectory() as td:
+            app, _facts = self._fixture(td)
+            r = subprocess.run([sys.executable, CHECKS, app], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("no --facts file given", r.stdout)
+
+    def test_without_posting_the_section_says_so(self):
+        with tempfile.TemporaryDirectory() as td:
+            app, facts = self._fixture(td, posting=False)
+            r = subprocess.run([sys.executable, CHECKS, app, "--facts", facts],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("no *posting*.md", r.stdout)
 
 
 if __name__ == "__main__":

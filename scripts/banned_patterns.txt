@@ -1,5 +1,5 @@
 # banned_patterns.txt - the single source for every banned string in an outgoing document.
-# source-hash: afb32628a505 scripts/banned_patterns.txt
+# source-hash: 9d0259f383d9 scripts/banned_patterns.txt
 #
 # Read by mechanical_checks.py. Keep the human rationale, and every adjudicated exception,
 # in a notes file of your own - and read it before adding, removing or relaxing a pattern
@@ -62,6 +62,20 @@ re:\b(sit|sits|sitting|sat)\b
 # drafting sessions - a corpus-level template, not one batch's tic.
 re:\bthis role (asks for|needs|runs on|is about)\b
 
+# Widened later, on a third pass. The narrow pattern above only catches "this role" as the
+# subject; the formula paraphrases around it just as readily with "your ad", "the ad", "this
+# posting", or a demonstrative comparison ("the same discipline ... your ..."). On the source
+# corpus it reached 7 letters in one pass by paraphrase alone and reported `tic clean` on
+# every one; two of those seven survived a full review round before being caught by hand.
+re:\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,15}\b(asks?|is asking|needs|wants) for someone
+re:\b(asks?|is asking|wants) for someone who\b
+re:\ba role like this one\b
+re:\bthe same (discipline|rhythm|shape|instinct)\b[^.]{0,40}\byour\b
+re:\banswers?\b[^.]{0,20}\bthe ad's\b
+# The letter naming "your ad"/"this ad" directly, in any construction - the self-referential
+# marker itself, not just the grading-formula shapes above.
+re:\b(your|this) ad\b
+
 # A self-diminishing comparative attached to a requirement the candidate does not need
 # to concede.
 the closest thing on my record to
@@ -69,6 +83,20 @@ the closest thing on my record to
 # These almost never describe the candidate's own approval authority - they describe a
 # client's procurement gate. Licensed instances exist; adjudicate before removing a hit.
 re:\bsign-?off\b
+
+# The cover-letter closer's convergent stem: "the dated[, sourced] detail behind every
+# [claim|line] above". Five letters, three variants, one stem - and THE RULE FILE SEEDED IT:
+# the style guide prescribed the phrase in bold as the fix for a different defect, and a
+# bolded imperative in a rule file outranks a prose instruction in a brief. The source line
+# was retired the same day; this is the backstop, not the fix. `tic`, so a hit is a
+# warn-and-adjudicate line, never a hard fail.
+re:\b(dated|sourced)[a-z, ]{0,20}\bdetail behind\b
+# Widened the same day, on two live evasions of the line above: one kept the adjective ("the
+# full, DATED version of each"), one swapped the noun ("the fuller RECORD behind each claim
+# above"). The first pattern keys on the literal "detail behind" and reported clean on both.
+# This one targets the FRAME - "<the thing> behind <each|every|those> ..." - which is the
+# move naming a string never retires. Still `tic`: adjudicate, never hard-fail.
+re:\b(detail|record|evidence|backing|substance|version)\b[a-z, ]{0,15}\bbehind (each|every|those)\b
 
 
 #@ tell

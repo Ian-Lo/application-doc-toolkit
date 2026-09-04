@@ -1,4 +1,4 @@
-<!-- source-hash: ca3699650639 docs/Recon_Checklist.md -->
+<!-- source-hash: 794ff7a63854 docs/Recon_Checklist.md -->
 # Company recon checklist
 
 **Read this before starting recon on any company.**
@@ -59,6 +59,67 @@ rather than a habit to watch:
 - **Check your recommendations too.** The same recon file recommended a strategy that
   presupposed a credential the candidate does not currently hold. A correction that fixes the
   assertion and leaves the recommendation derived from it is a half-fix, and one is on record.
+
+## Cite it or don't write it
+
+**Every regulatory date, commencement date, statutory deadline, named figure, headcount, revenue
+number, funding amount and named individual's title carries an inline citation** — the source URL
+and the date you read it — or it does not go in the file. Where the primary source can't be
+reached, write *"could not confirm"* and stop.
+
+An admitted gap is cheaper than a plausible number. `Company_Context.md` is the **one input to
+drafting that carries no fence**: the fact library guarantees its contents are fact-checked and
+says so in its own text, the saved posting is verbatim by construction, and recon is neither —
+but drafting reads all three the same way. Nothing downstream re-derives your figure.
+
+Prefer the primary source over a secondary one describing it. A regulator's own page, the
+company's own announcement, the annual report — not a law-firm summary of any of them, and not a
+news article's paraphrase of the summary. Where only a secondary source exists, cite it **as**
+secondary.
+
+The incident, on the source corpus. A recon file for a financial-services company asserted three
+times that a regulator's prudential standard had commenced a few weeks earlier, citing no page
+from the regulator. The regulator's own page put the commencement a full year earlier; the date
+recon gave was real, but it belonged to the transitional arrangement for pre-existing
+service-provider contracts — a real date, attached to the wrong thing. The claim laundered out of
+recon into the status file, into a **live cover letter's opening clause** addressed to a **risk**
+function — the one reader certain to know — and into a second application's recon file by
+cross-reference. Five places, corrected the same day.
+
+This is the second measured instance. The first was a job title the candidate has never held,
+which reached the opening sentence of a cover letter (see "Keep recon out of biography" below).
+Both were caught by the reviewer, which is `docs/Review_Checklist.md` step 5 working as designed
+— and a check that fires at review is a check that fires after the claim is written. **The fix is
+here, at the source.**
+
+### Date the claim to its source, and never write a changeable fact in the present tense
+
+**The third measured instance, and it is a different shape from the first two.** Nothing was
+misread and nothing was invented. A recon file asserted that a named client bank *"operates under
+full banking licence"*, sourced correctly to a vendor's news article — **which was written before
+that bank returned its licence and wound down.** A true sentence about one year, rendered in the
+present tense, read as a claim about the present. It reached the one paragraph of a cover letter
+whose whole job is to say *"I researched you"*, addressed to that vendor's own pre-sales team —
+again, the reader certain to know.
+
+**The rule.** Some facts are stable and some expire. A company registration number, a founding
+year, a completed acquisition and a published financial result do not change. **Operating status,
+licences and accreditations, employment and titles of named individuals, headcount, product
+availability, and "current" partnerships all do.** For anything in the second class:
+
+- **Carry the source's own date into the sentence**, not just into the citation — *"held a full
+  banking licence as at the source's March 2021 date"*, never *"operates under a full banking
+  licence"*.
+- **If the source predates the last twelve months and the fact is in the second class, mark it
+  explicitly as possibly stale** so the drafter and the reviewer both see it. A marked-stale fact
+  is usable with care; an unmarked one is a trap.
+- **A present-tense verb is a claim about today.** If you have not confirmed it today, do not use
+  one.
+
+**Why this belongs here rather than in review.** The reviewer caught it, but only by holding
+outside knowledge about one bank — that is luck, not a control, and it does not generalise to
+the next company. The recon agent is the only role that sees the source's date at the moment it
+writes the sentence.
 
 ## Keep recon out of biography
 

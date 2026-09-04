@@ -19,9 +19,10 @@ been removed, the shapes of the failures have not.
 | `docs/Review_Checklist.md` | The reviewer's mechanical controls, including the subtractive accretion diff |
 | `docs/Recon_Checklist.md` | Company research: topic list, source rules, reuse rules |
 | `docs/Conventions_Rationale.md` | Why each rule exists — the incident behind it, so rules are revised knowingly rather than eroded |
-| `scripts/mechanical_checks.py` | One-command document lint: banned strings, header block, link atomicity, duration phrases beside their canonical spans, section headers beside their bodies |
+| `scripts/mechanical_checks.py` | One-command document lint: banned strings, header block, link atomicity, duration phrases beside their canonical spans, section headers beside their bodies, and — given `--facts` — the ad vocabulary your fact library does not license |
 | `scripts/banned_patterns.txt` | The pattern file, with per-pattern rationale in its comments |
-| `scripts/test_mechanical_checks.py` | The lint's test suite — a pattern added without a probe fails by design |
+| `scripts/ad_vocab_stoplist.txt` | The ad-vocabulary check's noise floor: function words and role-generic phrases whose adoption carries no claim |
+| `scripts/test_mechanical_checks.py` | The lint's test suite — a pattern added without a probe fails by design, and so does a stop-list phrase that would suppress a measured over-claim |
 | `.claude/agents/` | Role definitions (drafting, review, recon) for Claude Code, with tool allowlists as enforcement |
 | `.claude/settings.json` | A minimal permissions allowlist |
 
@@ -44,9 +45,14 @@ The workflow assumes [Claude Code](https://claude.com/claude-code) (the agent de
 `CLAUDE.md` load automatically), but the documents and the lint stand alone:
 
 ```
-python3 scripts/mechanical_checks.py path/to/one-application-folder
+python3 scripts/mechanical_checks.py path/to/one-application-folder --facts path/to/your-fact-library.md
 python3 scripts/test_mechanical_checks.py
 ```
+
+The lint finds the outgoing documents by filename (`*Resume*`, `*CoverLetter*`) and the saved
+job ad by filename too (`*posting*.md`); with `--facts` it also lists the phrases the ad and
+your documents share that your fact library never licensed — the single best predictor of an
+over-claim on the corpus this was extracted from.
 
 You supply your own fact library — a single file of atomic, verified achievement entries,
 tagged for matching against job-ad requirements. The drafting rules in

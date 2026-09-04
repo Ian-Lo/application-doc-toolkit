@@ -1,0 +1,207 @@
+# Stop-list for the AD VOCABULARY check in mechanical_checks.py.
+# source-hash: 02abc732118f scripts/ad_vocab_stoplist.txt
+#
+# The check prints phrases that appear in the job ad AND in the outgoing documents but NOT in
+# your facts file - the pattern that predicted 4 of 10 over-claims in one pass on the corpus
+# this toolkit comes from ("data fusion", "reconciliation", "reporting documentation",
+# "translating business requirements into dashboards"). Ordinary English dominates a naive
+# implementation, so this file is the noise floor.
+#
+# TWO KINDS OF ENTRY, distinguished by whether the line has a space in it:
+#
+#   single word   a function word. Used two ways: a phrase made only of these is dropped, and
+#                 a phrase that STARTS or ENDS with one is dropped ("of the reporting" is not
+#                 a phrase anyone adopted, it is a window that happened to align).
+#   multi-word    a phrase suppressed exactly. These are judgement calls - vocabulary every
+#                 application shares, where adoption carries no claim - so
+#                 test_mechanical_checks.py probes each one structurally. Single words are
+#                 covered structurally too; probing 90 function words individually would be
+#                 ceremony, not coverage.
+#
+# Add entries for your own market's boilerplate (visa and work-rights phrasing, salary and
+# notice-period questions) - a cover letter that appends screening answers shares that
+# vocabulary with the ad by construction. Never add a phrase that could carry a claim.
+#
+# Lowercase, one per line. Blank lines and #-comments ignored.
+
+# --- function words -------------------------------------------------------------------
+a
+about
+across
+after
+against
+all
+also
+an
+and
+any
+are
+as
+at
+be
+been
+being
+both
+but
+by
+can
+could
+did
+do
+does
+each
+either
+every
+few
+for
+from
+had
+has
+have
+how
+i
+if
+in
+into
+is
+it
+its
+just
+many
+may
+might
+more
+most
+much
+must
+no
+nor
+not
+of
+on
+one
+only
+or
+other
+our
+out
+over
+own
+per
+s
+same
+shall
+she
+should
+so
+some
+such
+than
+t
+that
+the
+their
+them
+then
+there
+these
+they
+this
+those
+through
+to
+under
+up
+upon
+us
+use
+used
+using
+very
+was
+we
+were
+what
+when
+where
+which
+while
+who
+whom
+whose
+will
+with
+within
+would
+you
+your
+
+# --- role-generic phrases, each probed structurally in test_mechanical_checks.py ------
+# Vocabulary that appears in nearly every ad and every application. Adoption carries no
+# claim, so a hit is pure noise rather than a question worth a reviewer's attention.
+work with
+working with
+experience in
+experience with
+years of experience
+ability to
+strong communication
+communication skills
+attention to detail
+team members
+stakeholder engagement
+business stakeholders
+day to day
+fast paced
+problem solving
+
+# Application mechanics, not claims. A cover letter that appends screening answers shares
+# this vocabulary with the ad by construction.
+right to work
+expected salary
+notice period
+full academic transcript
+
+# --- long but generic single words ----------------------------------------------------
+# UNIGRAM_MIN_LEN admits any word of 10+ characters, on the theory that domain jargon is
+# long. These are the counter-examples: long, ubiquitous, and carrying no claim. Words that
+# ARE claims stay off this list however long - reconciliation, segmentation, provenance,
+# orchestration, facilitation, remediation.
+activities
+additional
+appropriate
+capabilities
+collaboration
+communication
+communications
+development
+engagement
+environment
+environments
+experience
+improvement
+improvements
+including
+individual
+information
+initiatives
+maintaining
+management
+opportunities
+organisation
+organization
+particular
+performance
+procedures
+professional
+providing
+recommendations
+relevant
+requirements
+responsibilities
+stakeholder
+stakeholders
+successful
+supporting
+technologies
+understanding

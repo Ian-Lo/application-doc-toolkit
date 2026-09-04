@@ -1,4 +1,4 @@
-<!-- source-hash: eade86964ce3 docs/Writing_Style.md -->
+<!-- source-hash: 057487a29c69 docs/Writing_Style.md -->
 # Writing style — a voice model, and the LLM tells to avoid
 
 **Read this before drafting or revising any resume, cover letter, or screening-question
@@ -55,19 +55,59 @@ paper will attempt to examine X".
 - **Copy the moves, not the prose surface.** Source writing usually contains real copy-editing
   errors. It is evidence of how the writer structures an argument, not a copy-editing model.
 
+## The letter header block — hard breaks, every new cover letter
+
+`docs/Review_Checklist.md` has stated this convention since early on, but the reviewer reads that
+file and the drafter does not, so on the source corpus the same defect recurred across two
+separate passes before the rule was restated here, where drafting reads it directly.
+
+Every new cover letter's header and valediction use a trailing backslash (`\`) as a Markdown hard
+line break — **not** two trailing spaces, not a blank line:
+
+```
+Jane Doe\
+Springfield\
++1 555 0100 | jane@example.com | [LinkedIn](https://www.linkedin.com/in/janedoe/)
+
+<addressee>
+
+Re: <role title exactly as advertised>
+
+Dear <salutation>,
+
+...
+
+Regards,\
+Jane Doe
+```
+
+**Losing the `\` on the name/city lines, or after `Regards,`, collapses the block into one
+run-on paragraph when the document renders** — invisible in the markdown source, which is exactly
+why it survives an author's own read-through and needs a mechanical check
+(`mechanical_checks.py`'s `LETTER HEADER BLOCK` section) rather than eyeballing. Resumes use the
+same header line without the hard breaks, since a resume has no valediction.
+
 ## The closing line — where a published evidence page is available
 
 Where the candidate has a **published, checkable record** of their career facts, every new cover
 letter closes its body with one short paragraph that points at it and offers a call, sitting
-immediately above the valediction. Three moves: the record is published, it is there to be
-checked, there is a way to reach the candidate.
+immediately above the valediction.
+
+**The three moves, stated as moves. There is deliberately no model sentence here.**
+
+1. Point at the published record — **without characterising what is on it** (see the
+   prohibition below; this is the move most likely to go wrong).
+2. Offer the reader a next step they can actually take.
+3. Give the contact detail.
 
 **Build the paragraph from the three moves. Never from a model sentence.** This section originally
-carried one, written as an illustration. Its opening words then turned up at the head of three
-independently drafted closers — the rule seeded the convergence it exists to prevent, exactly as a
-fact library will seed a banned verb into drafts when it uses that verb in its own pre-written
-bullets. The model sentence has been removed rather than reworded, because the removal is the
-fix.
+carried one, written as an illustration with an explicit anti-copy warning attached. Its
+comparative frame then turned up in three of four independently drafted closers in a single
+review — the rule seeded the convergence it exists to prevent, exactly as a fact library will
+seed a banned verb into drafts when it uses that verb in its own pre-written bullets. The warned
+sentence spread as readily as unwarned phrases did; the warning bought nothing measurable. **A
+rule file must not contain a well-formed specimen of a construction it bans, marked or
+unmarked** — if a drafter can lift it, a drafter will.
 
 **"Adapt the wording to each letter" was not specific enough, and this is measurable.** Three
 drafting agents, working independently on three different ads with no sight of each other's
@@ -77,7 +117,7 @@ output, produced the same clause in all three letters with a single word swapped
 > "published **precisely so it can be verified rather than taken on faith**"
 > "it's public **precisely so it can be checked rather than taken on faith**"
 
-**So three phrasings are retired outright, and none returns:**
+**So four phrasings are retired outright, and none returns:**
 
 - **"rather than taken on faith"**, and the "precisely so it can be [checked|verified]" frame it
   travels with. Convergent from a standing start in 3 of 3 letters.
@@ -90,14 +130,38 @@ output, produced the same clause in all three letters with a single word swapped
   read by all three agents, is the finding: naming a string retires the string, not the move.** The
   paragraph must now enter from somewhere other than the record — the contact details, the reader's
   own next step, or a specific artefact named earlier in the letter.
+- **"the dated, sourced detail behind …"**, and the `[dated|sourced] detail behind every
+  [claim|line] above` frame it travels with. **This one was seeded by this very file**: an earlier
+  version of the paragraph below prescribed it, in bold, as the replacement for a different
+  defect. Measured across a five-letter pass: five letters, three variants, one stem — the last
+  from a cold drafting instance explicitly briefed to enter the closer differently, which
+  converged anyway. **A bolded imperative in a rule file outranks a prose instruction in a
+  brief.** Both patterns are in `banned_patterns.txt` as a backstop; the fix was removing the
+  prescription.
 
 **And one thing the closer must never do, found in the same round.** One of those letters wrote
 that the page was published "with **the vignettes** those paragraphs were built from" — naming
 the project's internal term for its fact library, which tells an external reader the letter was
 assembled from one. The closer points at a published page, so it is the exact place the boundary
 between *the candidate's published evidence* and *the drafting apparatus* is most likely to be
-crossed. **No outgoing document names the fact library, the agents, or the private corpus.** Write
-"the dated, sourced detail behind those paragraphs".
+crossed. **The prohibition: no outgoing document names the fact library, the agents, or the
+private corpus.** That is the whole rule — there is no replacement phrase here, for the reason the
+fourth retired phrasing above records.
+
+**A second prohibition, and this file seeded this one too.** An earlier version of this paragraph
+ended *"say what the page holds in whatever words the letter's own rhythm wants."* **The closer
+may point at the published page. It may not describe the page's contents.** Four letters in one
+pass took the invitation, and three of them made statements that were false against the published
+page as it stood on disk: *"clients, contract values and dates are laid out in full … kept
+current"* (the page carried no contract values and had not been reviewed in weeks); *"the dates,
+figures and named clients above are all sourced at the link"* (two of them were not on the page);
+*"laid out next to where they came from"* (the page carries no provenance, by design). The fifth
+letter was correct, and the reason is the rule: it promised nothing checkable. **The mechanism is
+structural, not careless.** A published page is hand-authored and lags the fact library by
+construction, so a closer that enumerates its contents is a claim about a second document that
+nobody re-checks when the first one changes. This is the exact sibling of *never promise the
+reader's tooling can reach it*, below: **the closer may not make a claim about anything the letter
+itself does not contain.**
 
 **The lesson generalises past these two strings.** Hand several agents the same rule and the same
 three moves and they converge on the most obvious way to say it — and the most obvious way is what

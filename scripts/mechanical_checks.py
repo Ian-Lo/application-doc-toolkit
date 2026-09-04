@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 8bdaa9072733 scripts/mechanical_checks.py
+# source-hash: 15df575b391a scripts/mechanical_checks.py
 """mechanical_checks.py - a document reviewer's mechanical pass, as one command.
 
     python3 mechanical_checks.py path/to/one-application-folder
@@ -40,6 +40,11 @@ FILES.
   `(Mon YYYY - present)` becomes a canonical duration the report prints for comparison.
 - Documents are `*.md` files in the application folder whose names contain `Resume` or
   `CoverLetter`/`Cover_Letter` (case-insensitive).
+- The saved posting (any `*.md` in the application folder whose name contains `posting`,
+  case-insensitive) and the facts file together drive the AD VOCABULARY section: phrases in
+  both the ad and the outgoing documents but absent from the facts file. Its noise floor is
+  `ad_vocab_stoplist.txt` beside this script - a separate file for the same reason as the
+  pattern file: tunable without editing code.
 """
 
 from __future__ import annotations
@@ -272,6 +277,158 @@ def check_atomicity(text: str) -> list:
     return problems
 
 
+# ---------------------------------------------------------------------------
+# Ad vocabulary the facts file does not license.
+#
+# Proposed by a review on the source corpus after measuring the pattern rather than guessing
+# it: ad-vocabulary adoption was the single reliable predictor of over-claims in that pass,
+# 4 of 10. "data fusion", "reconciliation", "reporting documentation", "translating business
+# requirements into dashboards" - each present in the ad's verbatim block and absent from the
+# fact library.
+#
+# The set is computable, and computing it costs the reviewer nothing. It matters more here
+# than a check normally would: if the reviewing agent has no pattern-search tool, this report
+# is the only pattern search it has.
+#
+# WARN-STYLE, NEVER A FAILURE. A hit is a question - "does the library license this?" - and
+# the honest answers include "yes, in different words". Two of the four measured hits were
+# real over-claims; the check does not know which.
+# ---------------------------------------------------------------------------
+
+# Same reasoning as SECTION_ITEM_CAP: the check pays off on the first handful, and an
+# uncapped list would drown the sections above it in the reviewer's transcript.
+AD_VOCAB_CAP = 20
+STOPLIST = os.path.join(HERE, "ad_vocab_stoplist.txt")
+NGRAM_MIN, NGRAM_MAX = 2, 5
+WORD_RE = re.compile(r"[a-z0-9][a-z0-9+#.&/-]*")
+# Single words are included too, but only long ones. One of the four measured over-claims was
+# the bare word "reconciliation", so a purely multi-word check would have missed a quarter of
+# the evidence it was built on. Length is a crude rarity proxy and it is the right kind of
+# crude: domain jargon is long ("reconciliation", "provenance" at 10, "orchestration"),
+# ordinary connective English is short. Everything long AND generic ("information",
+# "requirements", "stakeholders") goes in the stop-list instead.
+UNIGRAM_MIN_LEN = 10
+COVER_LETTER_RE = re.compile(r"cover[_ ]?letter", re.I)
+
+
+def load_stoplist(path: str) -> tuple:
+    """(single-word stopwords, multi-word suppressed phrases). See the file's own header."""
+    words, phrases = set(), set()
+    with open(path, encoding="utf-8") as fh:
+        for raw in fh:
+            line = raw.strip().lower()
+            if not line or line.startswith("#"):
+                continue
+            (phrases if " " in line else words).add(line)
+    return words, phrases
+
+
+def normalise_words(text: str) -> list:
+    """Lowercase word tokens, markdown stripped. Sentence boundaries become gaps.
+
+    Punctuation that ends a clause inserts a gap, so an n-gram never spans a full stop or a
+    bullet boundary - "...into dashboards. Reconciliation of..." must not manufacture the
+    phrase "dashboards reconciliation".
+    """
+    out = []
+    for chunk in re.split(r"[.;:!?\n\r()\[\]{}|]+", text.lower()):
+        chunk = re.sub(r"[*_`>#]+", " ", chunk)
+        found = WORD_RE.findall(chunk)
+        if found:
+            out.append(found)
+    return out
+
+
+def ngrams(runs: list, lo: int = NGRAM_MIN, hi: int = NGRAM_MAX) -> set:
+    out = set()
+    for run in runs:
+        for size in range(lo, hi + 1):
+            for i in range(len(run) - size + 1):
+                out.add(" ".join(run[i:i + size]))
+    return out
+
+
+def ad_vocabulary(ad_text: str, doc_texts: list, facts_text: str,
+                  stopwords: set, phrases: set) -> list:
+    """Phrases in the ad AND the documents but NOT in the facts file.
+
+    Longest match wins: a 4-gram that survives suppresses the 2- and 3-grams inside it, so
+    "translating business requirements into dashboards" is reported once rather than as six
+    overlapping fragments. Boundary stopwords are dropped because a window that merely
+    aligns ("of the reporting") is not vocabulary anyone adopted.
+    """
+    ad_runs = normalise_words(ad_text)
+    if not ad_runs:
+        return []
+    ad = ngrams(ad_runs) | {w for run in ad_runs for w in run if len(w) >= UNIGRAM_MIN_LEN}
+    doc_runs = normalise_words(" \n ".join(doc_texts))
+    docs = ngrams(doc_runs) | {w for run in doc_runs for w in run}
+    facts_runs = normalise_words(facts_text)
+    facts = ngrams(facts_runs) | {w for run in facts_runs for w in run}
+
+    kept = []
+    for phrase in ad & docs:
+        if phrase in facts or phrase in stopwords:
+            continue
+        # A suppressed phrase suppresses its own fragments too. Without this, stop-listing
+        # "full academic transcript" leaves "full academic" and "academic transcript" behind,
+        # which is worse than not stop-listing it at all.
+        if any(phrase == p or phrase in p for p in phrases):
+            continue
+        toks = phrase.split()
+        if toks[0] in stopwords or toks[-1] in stopwords:
+            continue
+        if all(t in stopwords for t in toks):
+            continue
+        kept.append(phrase)
+
+    kept.sort(key=lambda p: (-len(p.split()), p))
+    out = []
+    for phrase in kept:
+        if any(phrase in longer and phrase != longer for longer in out):
+            continue
+        out.append(phrase)
+    return sorted(out, key=lambda p: (-len(p.split()), p))
+
+
+def locate(phrase: str, text: str) -> tuple:
+    """First (lineno, line) whose normalised form contains `phrase`, or (0, "")."""
+    for n, line in enumerate(text.splitlines(), start=1):
+        for run in normalise_words(line):
+            if phrase in " ".join(run):
+                return n, line.strip()
+    return 0, ""
+
+
+def claim_text(path: str, text: str) -> str:
+    """The part of a document that makes claims, for the ad-vocabulary comparison.
+
+    A cover letter's header block - name, contact lines, `Re:` and the salutation - is
+    addressing metadata, never a claim, and it is dense in exactly the proper nouns recon
+    supplies. Leaving it in put a hiring manager's name and the company's name in a report
+    meant to surface adopted vocabulary. Everything from the salutation onward is kept.
+    """
+    if not COVER_LETTER_RE.search(os.path.basename(path)):
+        return text
+    lines = text.splitlines()
+    for n, line in enumerate(lines[:14]):
+        if re.match(r"\s*Dear\b", line):
+            return "\n".join(lines[n + 1:])
+    return text
+
+
+POSTING_NAME_RE = re.compile(r"posting.*\.md$", re.I)
+
+
+def read_posting(app_dir: str) -> str:
+    """The saved ad: the first `*posting*.md` in the folder that is not an outgoing document."""
+    for name in sorted(os.listdir(app_dir)):
+        if POSTING_NAME_RE.search(name) and not DOC_NAME_RE.match(name):
+            with open(os.path.join(app_dir, name), encoding="utf-8") as fh:
+                return fh.read()
+    return ""
+
+
 def section_blocks(text: str) -> list:
     """Headers paired with the items beneath them.
 
@@ -316,7 +473,8 @@ def section_blocks(text: str) -> list:
     return out
 
 
-def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str) -> int:
+def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str,
+                       facts_path: str = None) -> int:
     app = os.path.basename(app_dir.rstrip("/"))
     docs = outgoing_docs(app_dir)
     print("MECHANICAL CHECKS - %s" % app)
@@ -415,6 +573,50 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
                       % (len(items) - SECTION_ITEM_CAP))
     print("\n  Ask of each header: what does it assert that its block does not evidence?")
     print("  Yield is highest when the ad is written as abstract capability nouns.")
+
+    print("\nAD VOCABULARY NOT LICENSED BY THE FACTS FILE   (warn - a question, not a defect)")
+    ad_text = read_posting(app_dir)
+    if not ad_text:
+        print("  no *posting*.md in the application folder - cannot compare")
+    elif not facts_path or not os.path.isfile(facts_path):
+        print("  no --facts file given - cannot tell licensed vocabulary from adopted vocabulary")
+    elif not os.path.isfile(STOPLIST):
+        print("  MISSING %s - the check cannot run without its noise floor"
+              % os.path.basename(STOPLIST))
+    else:
+        doc_texts = []
+        for path in docs:
+            with open(path, encoding="utf-8") as fh:
+                doc_texts.append(claim_text(path, fh.read()))
+        with open(facts_path, encoding="utf-8") as fh:
+            facts_text = fh.read()
+        stopwords, phrases = load_stoplist(STOPLIST)
+        found = ad_vocabulary(ad_text, doc_texts, facts_text, stopwords, phrases)
+        if not found:
+            print("  clean - every phrase shared with the ad also appears in the facts file")
+        else:
+            print("  %d phrase(s) in the ad AND the documents, absent from the facts file:"
+                  % len(found))
+            for phrase in found[:AD_VOCAB_CAP]:
+                where = []
+                for path, text in zip(docs, doc_texts):
+                    n, line = locate(phrase, text)
+                    if n:
+                        short = "Resume" if "resume" in os.path.basename(path).lower() else "Letter"
+                        where.append("%s L%d" % (short, n))
+                print("      %-52s %s" % (phrase[:52], ", ".join(where)))
+            if len(found) > AD_VOCAB_CAP:
+                print("      ... %d more" % (len(found) - AD_VOCAB_CAP))
+            print("  Ask of each: does the facts file license this claim, in these words or any"
+                  " others?")
+            print("  A hit is NOT automatically a defect - the library often licenses the same"
+                  " claim")
+            print("  in different vocabulary. Adoption measured as 4-of-10 over-claims on the"
+                  " source corpus.")
+            print("  Expect proper nouns here (people, teams, products named by recon). Those"
+                  " are")
+            print("  usually addressing, not claims - skip them and read the capability"
+                  " phrases.")
     return 0
 
 
@@ -470,7 +672,8 @@ def main() -> int:
     if not os.path.isdir(args.app_dir):
         sys.stderr.write("not a directory: %s\n" % args.app_dir)
         return 2
-    return report_application(args.app_dir, cats, canonical_spans(args.facts), args.patterns)
+    return report_application(args.app_dir, cats, canonical_spans(args.facts), args.patterns,
+                              args.facts)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-<!-- source-hash: bf20deef05bc docs/Conventions_Rationale.md -->
+<!-- source-hash: eb7877818bab docs/Conventions_Rationale.md -->
 # Why the conventions exist
 
 Background for the rules in `CLAUDE.md`. Read this when a rule looks arbitrary or you're
@@ -351,3 +351,40 @@ is allowed to change inside a pass. So: re-check status **immediately before** `
 prefer explicit file lists over directory adds whenever a peer session is busy. A directory add
 is a claim that everything under it belongs to this pass, and no earlier status check can make
 that claim true at staging time.
+
+**The index itself is shared, not just the tree.** Mid-pass, a peer session staged its own
+files and then committed; its commit machinery reset this session's already-staged entries (a
+staged rename reverted to delete-plus-untracked). Even a correctly-staged explicit list can be
+unstaged by a peer between `git add` and `git commit`, and the tempting race-proof form,
+`git commit -- <paths>`, **cannot commit a staged rename**. It recurred in the opposite role a
+day later — this session's commit consumed the index between the peer's `git add` and its
+`git commit`, and the peer's commit aborted with *"no changes added to commit"*. Two things the
+second instance established: **the hazard is symmetric**, so "let the peer commit first" is
+advice both sides need and neither can time from inside; and **the window is not observable
+from either session** — a status check at the moment of staging is measured *before* the window
+opens. That is why the rule is now "stage, verify the staged list against the paths you meant,
+and commit as one uninterrupted step", rather than another instruction to check earlier.
+
+## Recon cites its dates and figures, or writes "could not confirm"
+
+`docs/Recon_Checklist.md` has a "Cite it or don't write it" section, and `.claude/agents/recon.md`
+a short restatement of it. The rule: any regulatory date, commencement date, statutory deadline,
+named figure, headcount, revenue or funding number, or named individual's title carries an inline
+source URL and read-date, or recon writes *"could not confirm"* instead of asserting.
+
+**Two measured instances on the source corpus, and both reached a live cover letter.** A recon
+file asserted a job title the candidate has never held, which surfaced in a letter's opening
+sentence. Later, a recon file asserted three times that a regulator's prudential standard had
+commenced a year later than it actually had, citing no page from the regulator — the later date
+was real, but it belonged to a transitional arrangement for pre-existing contracts. It propagated
+into the status file, into a live cover letter's opening clause addressed to a financial-services
+**risk** function, and into a second application's recon file by cross-reference. Corrected in
+five places.
+
+**Why the fix is at the source rather than at review.** Both instances were caught by
+`docs/Review_Checklist.md` step 5, which already tells the reviewer to distrust recon — so review
+is working, and telling it to work harder buys nothing. The asymmetry is structural: the other
+two inputs to drafting are fenced (the fact library guarantees fact-checked contents and states
+that guarantee in its own text; the saved posting is verbatim by construction) and recon is not,
+while drafting reads all three alike. A check that fires at review fires after the claim is
+written; provenance discipline is the only thing that stops it being written.

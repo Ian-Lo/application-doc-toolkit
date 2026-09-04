@@ -1,11 +1,16 @@
 {
-  "//": "source-hash: fdca6498fab4 .claude/settings.json ",
+  "//": "source-hash: a468f924b54a .claude/settings.json ",
   "permissions": {
     "allow": [
       "WebSearch",
       "Bash(python3 scripts/mechanical_checks.py *)",
       "Bash(python3 scripts/test_mechanical_checks.py)",
-      "Bash(textutil -convert txt *)"
+      "Bash(textutil -convert txt *)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
     ]
   }
 }

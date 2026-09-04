@@ -1,4 +1,4 @@
-<!-- source-hash: 15f107506f65 docs/Review_Checklist.md -->
+<!-- source-hash: 9feda0c17d84 docs/Review_Checklist.md -->
 # Application review checklist
 
 **Read this before reviewing any resume or cover letter.** Read `Writing_Style.md` alongside it —
@@ -124,8 +124,9 @@ and paste the report). If the review is being done by an LLM agent, **the report
 brief** — hand-typed grep patterns are the specific failure the script replaced.
 
 It covers the banned strings, the letter's header block, link atomicity, every duration phrase
-printed beside its canonical span from the facts file, and every section header printed beside
-its block contents.
+printed beside its canonical span from the facts file, every section header printed beside its
+block contents, and — when it is run with `--facts` — the ad vocabulary the facts file does not
+license, which is section 2's check computed rather than eyeballed.
 
 Three reasons this is a script and not a list of greps you run yourself:
 
@@ -138,6 +139,15 @@ Three reasons this is a script and not a list of greps you run yourself:
   change just made rather than against the rule. A script's output cannot be misreported.
 - For an LLM reviewer, **it costs zero tool calls instead of eight**, and every grep result
   pulled into the transcript is re-sent on every later turn of the review.
+
+**But do not treat the report as infallible — spot-check it once, for staleness.** On the source
+corpus a report generated earlier in a pass was pasted after a new pattern had been installed in
+between, and reported **`clean` on a string the live pattern matches**. The defence costs one
+tool call: read `banned_patterns.txt` — it is short — pick one pattern that plainly ought to fire
+on the text in front of you, check it by hand, and see whether the report agrees. If it does not,
+say so at the top of your report and treat the whole thing as untrusted for that application.
+This is a spot-check, not a substitute: reading the pattern file does not let you search the
+documents, so the report is still the only pattern search you have.
 
 **Check the letter has a header block before anything else.** A full draft-review-revise cycle
 once produced a cover letter with **no name, no contact line, no addressee and no `Re:` line**,
