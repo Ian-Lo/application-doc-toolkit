@@ -1,4 +1,4 @@
-<!-- source-hash: 5f356baa46e0 CLAUDE.md -->
+<!-- source-hash: c1b613a67066 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in
@@ -40,7 +40,7 @@ or role name into a folder, and never guess a filename field.
 | *This is the ad* — "this is the ad, save it verbatim", "here's the job posting" | Write the pasted text into that folder's `posting.md` under **Verbatim ad text**, unchanged. No summary in its place. |
 | *Research, draft, review* — "research the company, then draft, then review", "write the resume and cover letter" | The workflow-order rules below: recon, then drafting, then review, with the mechanical checks pasted into every review brief. |
 | *Run the checks* — "run the checks", "lint it", "is it clean?" | `python3 scripts/mechanical_checks.py Applications/<folder> --facts Fact_Library.md`. Report the whole output, fix what drafting can fix, and say what remains. |
-| *Commit and push* — "commit and push", "save it to GitHub", "push it" | Commit the application folder and any library edits, then **push to the repository's default branch**. This is a private single-user repository with no reviewer to make a branch for. If the push is refused, say so in one line and tell the user: *press the session's **Create PR** button, then the green **Merge** button on github.com* — the files reach the repository either way. |
+| *Commit and push* — "commit and push", "save it to GitHub", "push it" | Commit the application folder and any library edits, then push. **In a claude.ai/code session the push lands on the session's own `claude/…` branch, never on `main`** — the session is pinned to it. Say so in one line, every time, and tell the user the two clicks that follow: *press **Create PR** on the bar above the message box, then on github.com press **Merge pull request** and then **Confirm merge***. In a terminal session with no such branch, push to the repository's default branch: this is a private single-user repository with no reviewer to make a branch for. |
 | *Update the toolkit* — "update the toolkit from github.com/Ian-Lo/application-doc-toolkit", "get the latest toolkit", "is there a newer version?" | `python3 scripts/update_toolkit.py`. It fetches the public repository and replaces the toolkit's own files wholesale (`CLAUDE.md`, `README.md`, `LICENSE`, `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates), runs the shipped test suites, and prints a diff summary plus the README's *What changed* entries this copy did not have. Report those entries to the user in full. An entry marked `LIBRARY EDIT:` names a change `Fact_Library.md` needs — **propose the edit and wait for a yes**; never make it silently. The script never touches `Fact_Library.md`, `Open_Questions.md`, `Applications/` or `sources/`. If it refuses because a toolkit file has uncommitted changes, do *commit and push* first and run it again. Afterwards the user says *commit and push* as usual. |
 | *PDF / printable / Word version* | There is no script for this. Point at `docs/Getting_Started.md` section 6: download the `.md` from github.com, open it in Google Docs, export PDF or DOCX. |
 
@@ -281,6 +281,13 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
   small/fast model, low effort; drafting = mid-tier model, medium effort; review = strongest
   model, high effort. Spawning by agent type pins this in frontmatter; a generic spawn with a
   prose brief does not, so name the type.
+- **If the agent types are not registered** — the spawn fails with *Agent type 'recon' not
+  found*, which a claude.ai/code session has done (2026-09-04) — spawn generically and carry
+  into the brief everything the definition in `.claude/agents/` would have pinned: the model
+  and effort, the `docs/` file the role must read first, and the tool limits. Tell the user in
+  one line that this happened. The limit that matters most is the reviewer's: **a generic
+  review spawn gets no Edit or Write tool**, and the brief says it reports findings and never
+  edits — without the registered type, that sentence is the only enforcement there is.
 - **Retire the drafting agent after ONE new application, or at ~200K tokens, whichever comes
   first.** The budget counts **only new applications**, because that is the work where a stale
   instance actually does damage:
@@ -361,7 +368,8 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
   non-fabricating suggestions; log both what was acted on and what wasn't.
 - **The review agent reports findings, it never edits outgoing documents** (*review*). No
   Edit/Write tool access on a review spawn — the `tools: Read` allowlist in
-  `.claude/agents/review.md` is the enforcement, so don't add Write to it. Findings go back to
+  `.claude/agents/review.md` is the enforcement, so don't add Write to it (and where the type
+  does not register, the spawn's own tool list is — see the spawn specs). Findings go back to
   the drafting agent, which applies them so fact-fidelity checking stays in one place. What the
   review checks is in **`docs/Review_Checklist.md`**, which the reviewer must read before
   reviewing anything, the same way drafting must read `docs/Writing_Style.md`.

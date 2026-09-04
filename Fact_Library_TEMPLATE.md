@@ -5,8 +5,9 @@
      Copy this file to Fact_Library.md at the repository root (asking Claude to
      "set up my fact library from the template" does this for you).
 
-     Every line that begins with  >>> REPLACE  is yours to write. Delete the marker
-     once you have replaced it. This file holds no example entries on purpose:
+     Every line that begins with the REPLACE marker (three angle brackets, then the
+     word, as on the lines below) is yours to write. Delete the marker once you have
+     replaced it; this comment is not one of them. This file holds no example entries on purpose:
      everything above the fence at the end counts as a confirmed fact about YOU,
      so a fictional entry here would be a licensed lie. A worked example lives in
      docs/Fact_Library_Guide.md instead.

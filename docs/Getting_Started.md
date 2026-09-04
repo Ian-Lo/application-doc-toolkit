@@ -56,7 +56,10 @@ toolkit's author.
    **Install** or **Authorize**. This is how Claude reads and writes your copy.
 3. Press **Select repository** under the message box and choose your repository. The first
    thing you see is a box asking what to work on, not a chat: type the first sentence from
-   section 4 into it and press **Start**. After that it is a conversation.
+   section 4 into it and press **Enter** (there is no Start button). After that it is a
+   conversation. The message box sometimes shows a greyed suggestion inside it, such as
+   *fix the three findings*: that is a hint, not text you have typed — write your own sentence
+   over it.
 4. Permissions. On first visit a notice explains that **Auto mode** is the default: Claude
    runs the actions it judges lower-risk and blocks the rest. Press **Got it** and leave it
    on Auto to begin with. The toolkit pre-approves every command this guide will make Claude
@@ -112,7 +115,13 @@ document and repeating step 2.
    attention: a missing header line, a phrase from the ad that your fact library never
    licensed, a duration that does not match your dates. Claude reports the result in full and
    fixes what it can.
-5. **"Commit and push."** The finished files reach your repository on github.com.
+5. **"Commit and push."** Claude saves the files to a working branch of its own in your
+   repository (its name starts with `claude/`) and tells you so. Two more clicks put them on
+   your main branch: press the **Create PR** button on the bar just above the message box
+   (one click, no form), then on github.com press the green **Merge pull request** button and,
+   when the page expands, the green **Confirm merge** button. The bar in Claude turns purple and
+   reads *Merged*. GitHub then offers **Delete branch**; you can ignore it. Every later "commit
+   and push" works the same way: a fresh push, then the same two clicks.
 
 <details>
 <summary>What Claude runs for you, if you are curious</summary>
@@ -124,12 +133,16 @@ git add … && git commit … && git push
 ```
 
 The `.claude/agents/` folder holds the three role definitions, and `CLAUDE.md` holds the
-rules that map your sentences to these commands.
+rules that map your sentences to these commands. If Claude mentions that those role
+definitions are *not registered* in its environment, it still runs the three roles, carrying
+each one's limits in its instructions instead; nothing is lost for you.
 </details>
 
 ## 6. Get the documents onto your Chromebook, click by click
 
 The resume and cover letter are plain-text files (`.md`). Google Docs opens them directly.
+Merge first (step 5.5): github.com shows your main branch, and the files are only there once
+the pull request is merged.
 
 1. On github.com, open your repository, then the `Applications` folder, then the folder Claude
    named in step 5.1. Click the resume file — its name starts with your name and `Resume`.
@@ -155,7 +168,8 @@ latest version, type:
 
 Claude fetches the toolkit and replaces its own files — the rules, the guides, the scripts and
 the templates — with the current versions, runs their tests, and tells you what changed since
-your copy was last updated. Then say **"commit and push"** as usual.
+your copy was last updated. Then say **"commit and push"** as usual, and merge the pull
+request with the same two clicks as in step 5.5.
 
 Three things to know:
 

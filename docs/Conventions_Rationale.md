@@ -424,3 +424,38 @@ The *What changed* section of the public README is the change log the update rea
 per publish, newest first, and the update prints the lines the copy did not have. An entry that
 needs a matching edit to the user's fact library carries `LIBRARY EDIT:` so the orchestrator
 proposes it, rather than the user discovering it from a lint failure.
+
+## The cloud session pushes to its own branch, and may not register the agent types
+
+Both found on 2026-09-04 by the first reader's-seat smoke test on claude.ai/code, against a
+private copy made from the template; both are properties of that environment, not of the guide.
+
+**"Commit and push" lands on a `claude/<slug>-<six chars>` branch, never on `main`.** The
+session is pinned to that branch for its whole life and says so unprompted when it pushes. The
+plan had "push to the default branch" as the primary route with a pull-request fallback; the
+test inverted that. So the *commit and push* row and the guide now state the branch and the two
+clicks that follow — **Create PR** on the session's bar, then **Merge pull request** and
+**Confirm merge** on github.com — as the normal route, and push-to-main survives only for a
+terminal session with no pinned branch. The guide quotes the button names because a merge is
+two clicks, not one, and a reader who stops after the first has nothing on `main`.
+
+**The agent types in `.claude/agents/` did not register.** The session's spawn failed with
+*Agent type 'recon' not found*, and it recovered on its own: it spawned generically, carried the
+model and the file pointers in the brief, and the three roles ran and handed over correctly
+(recon, drafting, review, each starting without a prompt). What is lost is structural, not
+functional: the reviewer's `tools: Read` allowlist is the toolkit's enforcement of
+*findings-never-edits*, and a generic spawn enforces it only by the tool list the orchestrator
+chooses and the sentence in the brief. The spawn-specs rule therefore names that case and what
+to carry, and the guide tells the reader the message is harmless. Whether the non-registration
+is a provisioning quirk or the cloud session's steady state is unknown; the rule assumes it can
+happen.
+
+A smaller finding from the same run, recorded so the trap is known: an agent's scratch script
+asserted that no `REPLACE` marker survived in the written library and tripped on the template's
+own header comment, which spelled the marker out in prose. The comment now describes the marker
+instead of containing it. The library was untouched; the failed run cost one retry.
+
+The drafted cover letter from the same run matched the header template line for line, except
+where the template was silent: the two-line addressee had no hard break between its lines, and
+the file opened with a bare `---`. `Writing_Style.md` now shows the addressee as a hard-broken
+block and says the name line is the first line of the file.

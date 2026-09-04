@@ -1,4 +1,4 @@
-<!-- source-hash: 057487a29c69 docs/Writing_Style.md -->
+<!-- source-hash: 2d5bc241fe24 docs/Writing_Style.md -->
 # Writing style — a voice model, and the LLM tells to avoid
 
 **Read this before drafting or revising any resume, cover letter, or screening-question
@@ -69,7 +69,8 @@ Jane Doe\
 Springfield\
 +1 555 0100 | jane@example.com | [LinkedIn](https://www.linkedin.com/in/janedoe/)
 
-<addressee>
+<Company or agency>\
+<Hiring team, named manager, or the address the ad gives>
 
 Re: <role title exactly as advertised>
 
@@ -80,6 +81,10 @@ Dear <salutation>,
 Regards,\
 Jane Doe
 ```
+
+The name line is the first line of the file: no front matter, no horizontal rule, no heading
+above it. The addressee is a hard-broken block too when it runs to more than one line — a
+company line followed by a team line without the `\` renders as one sentence.
 
 **Losing the `\` on the name/city lines, or after `Regards,`, collapses the block into one
 run-on paragraph when the document renders** — invisible in the markdown source, which is exactly
