@@ -10,15 +10,19 @@ Extracted from a real, private application corpus. The measurements quoted in th
 (failure rates, token costs, review yields) were taken on that corpus; identifying detail has
 been removed, the shapes of the failures have not.
 
-**Start here if you are new:** [`docs/Getting_Started.md`](docs/Getting_Started.md) — from
-nothing to a finished resume and cover letter, in the browser, with no installs. Then
-[`docs/Fact_Library_Guide.md`](docs/Fact_Library_Guide.md) for the file everything is built from.
+**Start here if you are new:** [`docs/Getting_Started_CLI.md`](docs/Getting_Started_CLI.md) —
+from nothing to a finished resume and cover letter, with Claude Code installed on your own
+computer. This is the preferred route. [`docs/Getting_Started.md`](docs/Getting_Started.md) is
+the browser-only alternative for a Chromebook; it has been tested and works, with limitations
+the CLI guide lists. Then [`docs/Fact_Library_Guide.md`](docs/Fact_Library_Guide.md) for the
+file everything is built from.
 
 ## What changed
 
 <!-- One line per publish, newest first, dated. `scripts/update_toolkit.py` prints the lines a
      private copy did not have. A line that needs a matching edit to the user's Fact_Library.md
      carries `LIBRARY EDIT:` followed by the edit. -->
+- 2026-09-04 — `docs/Getting_Started_CLI.md`: the preferred route, installing Claude Code on your own computer (macOS, Windows through WSL, Ubuntu/Debian) with push straight to `main` and no pull request; the browser guide is now the Chromebook alternative and says so under its title.
 - 2026-09-04 — First full reader's-seat smoke test applied: *commit and push* in a claude.ai/code session lands on a `claude/…` branch, so `docs/Getting_Started.md` §5.5 and the `CLAUDE.md` row now give the Create PR → Merge pull request → Confirm merge clicks; the spawn specs cover a session where the `.claude/agents/` types do not register; §3 *press Start* corrected to Enter; the fact-library template's comment no longer spells the REPLACE marker; `docs/Writing_Style.md` shows the addressee as a hard-broken block and puts the name line first.
 - 2026-09-04 — Toolkit updates for private copies: say *"update the toolkit"*; `scripts/update_toolkit.py` fetches this repository, replaces the toolkit's own files, runs the tests and reports this section's new lines (`docs/Getting_Started.md` §7).
 - 2026-09-04 — `docs/Getting_Started.md` §2–§3 corrected against the live github.com and claude.ai/code screens: sign in to GitHub first, the visibility control is a dropdown that defaults to Public, *Continue on web* is the browser route, and the default permission mode is Auto.
@@ -30,7 +34,8 @@ nothing to a finished resume and cover letter, in the browser, with no installs.
 | Path | What it is |
 |---|---|
 | `CLAUDE.md` | The orchestrator's rulebook: workflow order, agent budgets, capture and QA rules, and the intent table that maps a user's plain sentences to the scripts |
-| `docs/Getting_Started.md` | The from-zero guide, written for a Chromebook user who never opens a terminal |
+| `docs/Getting_Started_CLI.md` | The from-zero guide for the preferred route: Claude Code installed on your own Mac, Windows (WSL) or Linux computer |
+| `docs/Getting_Started.md` | The browser-only alternative, written for a Chromebook user who never opens a terminal; tested, with the limitations the CLI guide lists |
 | `docs/Fact_Library_Guide.md` | How to build the fact library by conversation: what an entry is, where facts come from, the fence, the editing rules |
 | `Fact_Library_TEMPLATE.md` | The library's skeleton, with `>>> REPLACE` markers; the worked example is in the guide, not the template |
 | `Open_Questions_TEMPLATE.md` | The one file where unconfirmed facts wait |
@@ -65,8 +70,8 @@ nothing to a finished resume and cover letter, in the browser, with no installs.
 ## Using it
 
 Make a **private** copy first (*Use this template → Private*): your copy will hold your
-employment history, and git history is permanent. `docs/Getting_Started.md` walks through the
-rest by conversation. The workflow assumes [Claude Code](https://claude.com/claude-code) (the
+employment history, and git history is permanent. `docs/Getting_Started_CLI.md` walks through
+the rest by conversation (`docs/Getting_Started.md` does the same for a Chromebook). The workflow assumes [Claude Code](https://claude.com/claude-code) (the
 agent definitions and `CLAUDE.md` load automatically), but the scripts stand alone:
 
 ```

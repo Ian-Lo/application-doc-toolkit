@@ -1,6 +1,14 @@
 <!-- source-hash: original -->
 # Getting started — from a Chromebook, in the browser
 
+**If you have a Mac, a Windows or a Linux computer, use `docs/Getting_Started_CLI.md`
+instead.** Installing Claude Code on your own computer is the preferred route: it is more
+flexible, and its behaviour is the best understood, because the method was built and is run
+that way. This browser route has been tested from a Chromebook and it works, but with
+limitations the other guide lists: every save needs a pull request, the role definitions did
+not register in the browser session, and the last step through Google Docs could not be
+tested from the session. Use this guide when a Chromebook is the only computer you have.
+
 This guide takes you from nothing to a finished resume and cover letter, as PDF and Word
 files, without installing anything. You will use three websites: github.com (where your
 private copy of the toolkit lives), claude.ai/code (where Claude does the work), and Google

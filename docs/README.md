@@ -2,8 +2,10 @@
 
 Read order, if you are new to the toolkit:
 
-1. **`Getting_Started.md`** — from nothing to a finished resume and cover letter, in the
-   browser. Start here if you are the person applying for jobs.
+1. **`Getting_Started_CLI.md`** — from nothing to a finished resume and cover letter, with
+   Claude Code installed on your own computer. The preferred route; start here if you are the
+   person applying for jobs. **`Getting_Started.md`** is the same journey in the browser, for a
+   Chromebook: tested, with the limitations the CLI guide lists.
 2. **`Fact_Library_Guide.md`** — the file every document is built from: what an entry is,
    where facts come from, the fence, and how to build it by conversation. The templates it
    refers to are `../Fact_Library_TEMPLATE.md` and `../Open_Questions_TEMPLATE.md`.
