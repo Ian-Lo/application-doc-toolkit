@@ -1,4 +1,4 @@
-<!-- source-hash: d6e5661fa0ad .claude/agents/recon.md -->
+<!-- source-hash: 1fa096a6ce26 .claude/agents/recon.md -->
 ---
 name: recon
 description: Company recon for a job application. Researches a company and writes Company_Context.md. Use when a job URL or posting is provided for a company that does not yet have a Company_Context.md.

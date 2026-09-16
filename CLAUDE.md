@@ -1,9 +1,13 @@
-<!-- source-hash: c1b613a67066 CLAUDE.md -->
+<!-- source-hash: 3cd095650e02 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in
 `docs/Conventions_Rationale.md` — read that if a rule looks arbitrary or you're tempted to make
 an exception, not on every run.
+
+**When a new rule earns a story, write the story into `docs/Conventions_Rationale.md` first, and
+land only the rule, one clause of why, and a pointer here.** Rationale written resident is
+rationale a later pass has to move, and this file is loaded into every session.
 
 **Applies to:** orchestrator (main session). Every other section carries its own audience tag.
 Most sections are orchestrator-only; a subagent brief that pastes one of those into a role that
@@ -71,7 +75,9 @@ Before presenting a finished resume, cover letter, or artifact:
 
 - Confirm the saved job posting holds the ad's **verbatim** text, not a summary. If it's a
   summary, re-fetch and replace it *before* reviewing — see "Job posting capture" below. A
-  review against a paraphrase produces specific, confident, wrong findings.
+  review against a paraphrase produces specific, confident, wrong findings. **Re-fetching is the
+  orchestrator's job, never a subagent's.** A subagent that finds a paraphrase stops and reports
+  it; it does not review around it.
 - Check every `[link text](url)` stays atomic on one line — bracketed text split across a line
   wrap silently breaks the link with no visible error. Re-check after any edit near a link.
 - Check the draft against `docs/Writing_Style.md`.

@@ -1,4 +1,4 @@
-<!-- source-hash: 9feda0c17d84 docs/Review_Checklist.md -->
+<!-- source-hash: 728b9c81bba1 docs/Review_Checklist.md -->
 # Application review checklist
 
 **Read this before reviewing any resume or cover letter.** Read `Writing_Style.md` alongside it —

@@ -1,22 +1,26 @@
 {
-  "//": "source-hash: a468f924b54a .claude/settings.json ",
+  "//": "source-hash: 83ce920f2548 .claude/settings.json ",
   "permissions": {
     "allow": [
       "WebSearch",
       "WebFetch",
-      "Bash(python3 scripts/new_application.py *)",
+      "Bash(python3 scripts/new_application.py:*)",
       "Bash(python3 scripts/test_new_application.py)",
-      "Bash(python3 scripts/mechanical_checks.py *)",
+      "Bash(python3 scripts/mechanical_checks.py:*)",
       "Bash(python3 scripts/test_mechanical_checks.py)",
       "Bash(python3 scripts/update_toolkit.py)",
-      "Bash(python3 scripts/update_toolkit.py *)",
+      "Bash(python3 scripts/update_toolkit.py:*)",
       "Bash(python3 scripts/test_update_toolkit.py)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
-      "Bash(git push:*)"
+      "Bash(git show:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(sed -n:*)"
     ]
   }
 }

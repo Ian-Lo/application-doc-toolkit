@@ -1,4 +1,4 @@
-<!-- source-hash: eb7877818bab docs/Conventions_Rationale.md -->
+<!-- source-hash: c37d497faa55 docs/Conventions_Rationale.md -->
 # Why the conventions exist
 
 Background for the rules in `CLAUDE.md`. Read this when a rule looks arbitrary or you're
@@ -459,3 +459,47 @@ The drafted cover letter from the same run matched the header template line for 
 where the template was silent: the two-line addressee had no hard break between its lines, and
 the file opened with a bare `---`. `Writing_Style.md` now shows the addressee as a hard-broken
 block and says the name line is the first line of the file.
+
+## A subagent's project instructions are a session-start snapshot, not a per-spawn disk read
+
+A same-session spawned subagent, asked to list the project instructions file's headings
+verbatim, returned all the headings as they stood *before* an edit made earlier in the same
+session — byte for byte, including a heading the edit had just deleted, and it could not see a
+sentence the edit had just added. The edit was already on disk; the spawn was answering for an
+earlier revision.
+
+**The mechanism:** a subagent's auto-loaded project instructions file is materialised once, when
+the parent session starts, and carried forward to every spawn in that session — it is not
+re-read from disk at spawn time. An edit reaches subagents only once a *new* session starts; a
+same-session probe of a same-session edit cannot see it, and will confidently report the old
+content rather than erroring.
+
+**Per-role agent-definition files don't share this staleness.** The same stale spawn correctly
+quoted wording added to its own role file in the same commit — those are read fresh per spawn,
+unlike the shared project instructions file.
+
+**The operational rule this earns:** validating a change to the project instructions file
+requires a probe from a genuinely fresh process — a new terminal invocation, not a new spawn
+inside the same session. A same-session spawn stays a valid probe for everything else (that the
+file auto-loads at all, that a role's own file is current); only "did my own just-made edit
+propagate" is the blind spot.
+
+## A blocked fetch and a confirmed-expired posting are different facts
+
+Re-checking a batch of saved postings before spending drafting or review effort on them, most of
+them turned out to be gone: several job boards showed their own "this job is no longer
+advertised" banner, one URL 404'd outright, and one employer's own current-vacancies listing had
+simply dropped the role. Separately, the fetch tool used for one of the boards returned a plain
+403 on every URL tried that day — live and dead postings alike.
+
+The two failure shapes look identical from the caller's side — both come back as "could not read
+the page" — but they are not the same fact and need different handling. A **blocked fetch** (a
+403, a bot-detection challenge) says nothing about whether the job still exists; it follows the
+ordinary retry-then-fallback path for a blocked capture and is never treated as expiry. A
+**confirmed-expired posting** — the page itself states the ad is gone, or the vacancy no longer
+appears on the employer's own listing — is a fact about the job, not a tooling failure, and gets
+acted on immediately: the application is skipped on a fact the site itself provided, never
+inferred from a fetch error.
+
+This is a different case from a judgment call about fit or strength, which stays a person's
+decision: a dead ad is a checkable fact, not a judgment, so it doesn't need the same referral.

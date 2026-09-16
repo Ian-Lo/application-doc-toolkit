@@ -1,4 +1,4 @@
-<!-- source-hash: c8ab9b6b1d93 .claude/agents/drafting.md -->
+<!-- source-hash: 75c1f5fb341c .claude/agents/drafting.md -->
 ---
 name: drafting
 description: Drafts and revises tailored resumes and cover letters from the candidate's fact library, and applies review findings. Use after recon is complete for an application, and again to apply each round of reviewer findings.
@@ -89,6 +89,14 @@ or repair a sentence a finding pointed at:
 After applying every finding in a pass, re-diff the summary, the Core Skills line, and the cover
 letter's opening paragraph against the body sentences each one compresses. This is where
 accretion instances concentrate.
+
+**Then re-read the application's status file and bring it up to date with the round you just
+applied**, the same way a revision pass should end with a dated entry in the decision log. A
+revision edits the resume and the cover letter and leaves the status file describing the round
+before — and the status file is what the *next* session reads first, so it is the one place a
+stale sentence is guaranteed to be read. Keep the status file inside its cap (`CLAUDE.md`,
+"Status files are status, not changelogs") — the gap notes and open items are what move, and
+history goes to the decision log, never into the status file.
 
 ## Never concede on the candidate's behalf
 

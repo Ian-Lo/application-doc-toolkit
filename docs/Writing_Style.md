@@ -1,4 +1,4 @@
-<!-- source-hash: 2d5bc241fe24 docs/Writing_Style.md -->
+<!-- source-hash: a0af00cc7a6f docs/Writing_Style.md -->
 # Writing style — a voice model, and the LLM tells to avoid
 
 **Read this before drafting or revising any resume, cover letter, or screening-question
@@ -250,6 +250,24 @@ this list and rewrite anything that trips it:
 - For values/culture-fit screening questions, echo the company's actual stated theme or
   mission rather than answering generically — but don't quote their own tagline back at them
   verbatim, which reads as flattery rather than real alignment.
+- No **unsupported** self-assessment framed as a general trait — "the same instinct [as some
+  other thing]", "the same discipline behind X" — asserting a personality-level equivalence
+  between two facts rather than stating both facts and letting the reader draw the link. It
+  survives `banned_patterns.txt` because it names no banned word. **There is deliberately no
+  model sentence here.** An earlier version of this entry gave one as its "fix" example, and a
+  drafting agent lifted it into a live letter almost verbatim the same day — the same mechanism
+  documented above under "The closing line": a rule file that contains a well-formed specimen of
+  a construction it bans gets copied, marked or unmarked. The fix is a move, not a sentence: name
+  the specific, checkable fact (a tool, a number, a client) instead of asserting the trait, and
+  build the sentence's shape from that fact rather than from an example here.
+  - **This bans an *unsupported* equivalence, not every "same X" construction.** If the fact
+    library itself licenses the equivalence in its own words — asserts, in its own text, that two
+    things are the same discipline or the same instinct — quoting that link is not the drafting
+    agent's own invented claim about the candidate's traits. The distinguishing question: **is
+    the equivalence licensed in the library's own words, or is the drafting agent asserting it?**
+    The banned form invents the link; the licensed form quotes a link the library already draws.
+    Don't delete a "same discipline" sentence on pattern-match alone — check the governing
+    library entry first, the same way any other claim gets checked.
 
 ## Handling gaps — never disqualify the candidate on their own behalf
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 15df575b391a scripts/mechanical_checks.py
+# source-hash: e0e8b28b635f scripts/mechanical_checks.py
 """mechanical_checks.py - a document reviewer's mechanical pass, as one command.
 
     python3 mechanical_checks.py path/to/one-application-folder
@@ -8,9 +8,11 @@
 
 Checks outgoing application documents (resumes and cover letters, matched by filename)
 against a banned-pattern file, and prints the mechanical context a reviewer needs:
+a staleness stamp naming when the report ran and the fingerprint of every input it read,
 banned-string hits with line numbers, the cover letter's header block, link and bracketed-
 token atomicity, every duration phrase beside the canonical date spans in your facts file,
-and every section header beside its block contents.
+every section header beside its block contents, and every derived summary/skills/topic-
+sentence line beside the experience bullet it compresses.
 
 WHY THIS EXISTS. Two measured problems, one fix.
 
@@ -50,11 +52,12 @@ FILES.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import re
 import sys
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_PATTERNS = os.path.join(HERE, "banned_patterns.txt")
@@ -249,6 +252,39 @@ def outgoing_docs(app_dir: str) -> list:
     return out
 
 
+def fingerprint(path: str) -> str:
+    """First 12 hex of sha256 - so a reader can tell whether the pattern file or the facts
+    file changed since a report was generated, the same shape a source-derived file's own
+    provenance header uses."""
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()[:12]
+
+
+def print_input_stamp(patterns_path: str, doc_paths: list) -> None:
+    """One header line plus one line per input actually read - the report's own
+    staleness stamp.
+
+    A report generated before a pattern-file edit, or before a document was last saved,
+    looks identical to a fresh one unless it says when it ran and what it read. A stale
+    paste has reported 'clean' on a live match before - the mechanism this guards against.
+
+    A listed path that does not exist (no posting saved yet, no --facts given) is skipped,
+    never printed as missing - the report's own sections already say so.
+    """
+    now = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
+    stamp = "generated %s | patterns %s@%s" % (
+        now, os.path.basename(patterns_path), fingerprint(patterns_path))
+    if os.path.isfile(STOPLIST):
+        stamp += " | stoplist %s@%s" % (os.path.basename(STOPLIST), fingerprint(STOPLIST))
+    print(stamp)
+    for path in doc_paths:
+        if not path or not os.path.exists(path):
+            continue
+        mtime = datetime.fromtimestamp(os.path.getmtime(path)).astimezone().strftime(
+            "%Y-%m-%d %H:%M:%S %z")
+        print("  %s  mtime %s" % (os.path.basename(path), mtime))
+
+
 def check_letter_header(text: str) -> list:
     """The cover letter's header block. A full draft-review-revise cycle once produced a
     letter with no name, no contact line and no Re: line - every other check was about
@@ -400,24 +436,50 @@ def locate(phrase: str, text: str) -> tuple:
     return 0, ""
 
 
-def claim_text(path: str, text: str) -> str:
-    """The part of a document that makes claims, for the ad-vocabulary comparison.
+def claim_split(path: str, text: str) -> tuple:
+    """`(offset, body)` - the claim-making part of a document, and the number of lines
+    dropped before it.
 
     A cover letter's header block - name, contact lines, `Re:` and the salutation - is
     addressing metadata, never a claim, and it is dense in exactly the proper nouns recon
     supplies. Leaving it in put a hiring manager's name and the company's name in a report
     meant to surface adopted vocabulary. Everything from the salutation onward is kept.
+
+    THE OFFSET IS THE WHOLE POINT of returning a pair rather than the body alone. A caller
+    that reports a line number must add it back: `locate()` numbers from line 1 of whatever
+    it is handed, so numbering the body alone reports every letter line low by the length of
+    the dropped header block - a real defect, caught only because every other section of the
+    same report numbered the same letter correctly.
+
+    Offset 0 on both fallthrough paths (a resume, or a letter with no salutation in the first
+    14 lines) - nothing was dropped on either, so adding the offset back is a no-op.
     """
     if not COVER_LETTER_RE.search(os.path.basename(path)):
-        return text
+        return 0, text
     lines = text.splitlines()
     for n, line in enumerate(lines[:14]):
         if re.match(r"\s*Dear\b", line):
-            return "\n".join(lines[n + 1:])
-    return text
+            return n + 1, "\n".join(lines[n + 1:])
+    return 0, text
+
+
+def claim_text(path: str, text: str) -> str:
+    """`claim_split()`'s body alone, for a caller that reports no line number.
+
+    Any NEW caller that prints a line number wants `claim_split()` and its offset, not this.
+    """
+    return claim_split(path, text)[1]
 
 
 POSTING_NAME_RE = re.compile(r"posting.*\.md$", re.I)
+
+
+def posting_path(app_dir: str) -> "str | None":
+    """The saved ad's own path, for the input stamp - `read_posting()` returns content only."""
+    for name in sorted(os.listdir(app_dir)):
+        if POSTING_NAME_RE.search(name) and not DOC_NAME_RE.match(name):
+            return os.path.join(app_dir, name)
+    return None
 
 
 def read_posting(app_dir: str) -> str:
@@ -473,6 +535,214 @@ def section_blocks(text: str) -> list:
     return out
 
 
+# ---------------------------------------------------------------------------
+# Body vs compression: the derived line beside the bullet it compresses.
+#
+# A summary sentence, a Core Skills entry or a cover-letter topic sentence often says
+# something DIFFERENT from the resume bullet it was compressing - a generalisation over an
+# accurate fact that is not itself accurate. Every fact underneath can be licensed while the
+# generalisation over them is not.
+#
+# IT IS A PAIRING PRINTER, NOT A PASS/FAIL TEST. The whole premise is that the words
+# changed, so exact matching cannot work. Print the pair, print what is on one side only,
+# and let the reader judge - the same posture as SECTION HEADERS vs their blocks.
+#
+# DIRECTION IS NOT STABLE. Sometimes the letter is right and the resume wrong, sometimes
+# the reverse. Nothing here assumes which side is canonical, and the section's own closing
+# prompt says so.
+#
+# NOTHING IS PRINTED BELOW THE FLOOR. A derived line with no plausible source bullet is a
+# different finding (an unsupported claim), and inventing a pair for it would train the
+# reader to skim the section.
+# ---------------------------------------------------------------------------
+
+# Overlap of a derived line's content words with a bullet's, as a fraction of the smaller set.
+# Below this, no bullet is offered as the source.
+PAIR_FLOOR = 0.30
+# Two shared content words is coincidence, not derivation - a Core Skills entry that names an
+# employer pairs with any bullet naming the same one on that strength alone below this floor.
+PAIR_MIN_SHARED = 3
+# Per-side word list length. The pair is the finding; an exhaustive diff is not.
+PAIR_WORDS_CAP = 10
+# A derived line needs enough content to be worth pairing; a bullet needs enough to be a
+# plausible source. Counted in content words, not raw tokens: a bare date range is five
+# tokens and would otherwise pair with a whole summary sentence on the year alone.
+PAIR_MIN_DERIVED_WORDS = 3
+PAIR_MIN_CONTENT = 5
+# The report is pasted whole into every review; an uncapped run would double its length.
+PAIR_CAP = 8
+
+DERIVED_HEADER_RE = re.compile(
+    r"^(professional summary|summary|profile|core skills|key skills|skills)\b", re.I)
+SUMMARY_HEADER_RE = re.compile(r"^(professional summary|summary|profile)\b", re.I)
+# Sections that make no achievement claims, so nothing in them can be a source bullet.
+NON_SOURCE_HEADER_RE = re.compile(
+    r"^(education|certification|training|referee|reference|interest|contact|career break)", re.I)
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[\"'(\[]?[A-Z0-9])")
+VALEDICTION_RE = re.compile(r"^\s*(regards|sincerely|yours|kind regards|best)\b", re.I)
+
+
+def word_stem(word: str) -> str:
+    """Plural-only stemming, deliberately not a general stemmer.
+
+    "service"/"services" and "solution"/"solutions" differing is noise, not a finding, and
+    it would fill every printed word set. Verb inflection is left alone on purpose: a crude
+    -ed/-ing stripper yields stems ("manag", "migrat") a reader cannot read back to a word,
+    and this section's whole output is words a reader reads.
+    """
+    if len(word) > 4 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 3 and word.endswith("s") and not word.endswith(("ss", "us", "is")):
+        return word[:-1]
+    return word
+
+
+def content_words(text: str, stopwords: set) -> dict:
+    """{stem: surface form} for the text, stop-listed. Reuses normalise_words()."""
+    out = {}
+    for run in normalise_words(text):
+        for w in run:
+            if w in stopwords or len(w) < 2:
+                continue
+            out.setdefault(word_stem(w), w)
+    return out
+
+
+def split_sentences(text: str) -> list:
+    return [s.strip() for s in SENTENCE_SPLIT_RE.split(text.strip()) if s.strip()]
+
+
+def derived_lines(resume_text: str, letter_body: str) -> list:
+    """(label, line) for every line that compresses something else.
+
+    Resume: each sentence of the Professional Summary paragraph, and every Core Skills
+    item. The summary is split by sentence rather than paired whole because a paragraph
+    derives from many bullets at once, so a whole-paragraph pairing scores below any floor.
+
+    Letter: the first sentence of each body paragraph - the topic sentence. Pass
+    `claim_text()` output in; the header block should already be gone.
+    """
+    out = []
+    for header, items in section_blocks(resume_text):
+        head = header.strip()
+        if not DERIVED_HEADER_RE.match(head):
+            continue
+        for item in items:
+            if SUMMARY_HEADER_RE.match(head):
+                out.extend((head, s) for s in split_sentences(item))
+            else:
+                out.append((head, item))
+    for para in re.split(r"\n\s*\n", letter_body or ""):
+        para = " ".join(row.strip() for row in para.splitlines() if row.strip())
+        if not para or para.startswith(("#", ">", "|")):
+            continue
+        if VALEDICTION_RE.match(para):
+            break
+        sentences = split_sentences(para)
+        if sentences:
+            out.append(("Letter topic sentence", sentences[0]))
+    return out
+
+
+def source_bullets(resume_text: str) -> list:
+    """The resume's experience-section bullets, from the same section_blocks() call.
+
+    Everything that is not a derived-line section and not a non-claiming section
+    (education, certifications) counts - which is how a personal-projects block stays in.
+    """
+    out = []
+    for header, items in section_blocks(resume_text):
+        head = header.strip()
+        if DERIVED_HEADER_RE.match(head) or NON_SOURCE_HEADER_RE.match(head):
+            continue
+        out.extend(items)
+    return out
+
+
+def best_source(line: str, bullets: list, stopwords: set) -> tuple:
+    """(score, bullet, only_in_line, only_in_bullet) for the single best-scoring bullet.
+
+    Score is shared content words over the smaller of the two sets, so a short Core Skills
+    entry is not penalised for pairing with a long bullet. Returns (0.0, "", [], []) when
+    nothing clears PAIR_FLOOR.
+    """
+    a = content_words(line, stopwords)
+    if len(a) < PAIR_MIN_DERIVED_WORDS:
+        return 0.0, "", [], []
+    best = (0.0, "", {}, {})
+    for bullet in bullets:
+        b = content_words(bullet, stopwords)
+        if len(b) < PAIR_MIN_CONTENT:
+            continue
+        shared = set(a) & set(b)
+        if len(shared) < PAIR_MIN_SHARED:
+            continue
+        score = len(shared) / min(len(a), len(b))
+        if score > best[0]:
+            best = (score, bullet, a, b)
+    if best[0] < PAIR_FLOOR:
+        return 0.0, "", [], []
+    score, bullet, a, b = best
+    only_a = sorted(a[s] for s in set(a) - set(b))
+    only_b = sorted(b[s] for s in set(b) - set(a))
+    return score, bullet, only_a, only_b
+
+
+def locate_item(item: str, text: str) -> tuple:
+    """Line number of a derived line or bullet, via locate() on its opening words.
+
+    Narrowing widths because locate() matches within a single line: a summary sentence that
+    starts mid-line in a wrapped paragraph has no six-word window on any one line. When even
+    a two-word window fails, fall back to the paragraph's first line using unwrap_blocks() -
+    the same joined view hits_in() uses, so there is one unwrapping implementation, not two.
+    """
+    runs = normalise_words(item)
+    if not runs or not runs[0]:
+        return 0, ""
+    heads = [" ".join(runs[0][:width]) for width in (6, 4, 3, 2)]
+    for phrase in heads:
+        n, line = locate(phrase, text)
+        if n:
+            return n, line
+    for start, _end, joined in unwrap_blocks(text):
+        for run in normalise_words(joined):
+            flat = " ".join(run)
+            if any(p in flat for p in heads):
+                return start, joined[:80]
+    return 0, ""
+
+
+def fmt_words(words: list) -> str:
+    shown = ", ".join(words[:PAIR_WORDS_CAP])
+    if len(words) > PAIR_WORDS_CAP:
+        shown += ", +%d more" % (len(words) - PAIR_WORDS_CAP)
+    return shown
+
+
+def compression_pairs(resume_text: str, letter_body: str, stopwords: set) -> tuple:
+    """(rows, clean, unpaired). A row is (label, line, bullet, only_line, only_bullet).
+
+    Only pairs with content words on BOTH sides are rows: a derived line that merely drops
+    words asserts nothing new, and printing it would cost five lines to say "faithful". Those
+    are counted in `clean` instead, so a clean application costs one line and the reader
+    still knows the check ran.
+    """
+    bullets = source_bullets(resume_text)
+    rows, clean, unpaired = [], 0, 0
+    for label, line in derived_lines(resume_text, letter_body):
+        if len(content_words(line, stopwords)) < PAIR_MIN_DERIVED_WORDS:
+            continue  # a bare skills token ("Advanced Excel") compresses nothing
+        score, bullet, only_a, only_b = best_source(line, bullets, stopwords)
+        if not bullet:
+            unpaired += 1
+            continue
+        if only_a and only_b:
+            rows.append((label, line, bullet, only_a, only_b))
+        else:
+            clean += 1
+    return rows, clean, unpaired
+
+
 def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str,
                        facts_path: str = None) -> int:
     app = os.path.basename(app_dir.rstrip("/"))
@@ -482,6 +752,8 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
     if not docs:
         print("\n  no Resume/CoverLetter documents found - nothing to check")
         return 1
+
+    print_input_stamp(patterns_path, docs + [posting_path(app_dir), facts_path])
 
     print("\nBANNED STRINGS   (%s)" % os.path.basename(patterns_path))
     any_hit = False
@@ -574,6 +846,50 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
     print("\n  Ask of each header: what does it assert that its block does not evidence?")
     print("  Yield is highest when the ad is written as abstract capability nouns.")
 
+    print("\nBODY vs COMPRESSION - the derived line beside the bullet it compresses")
+    print("  A summary sentence, a Core Skills entry and a letter's topic sentence each")
+    print("  generalise bullets written elsewhere. Printed per pair: the derived line, its")
+    print("  best-matching experience bullet, then the content words on ONE side only")
+    print("  (+line / +bullet). A pair with nothing one-sided is counted, not printed.")
+    resume_text = letter_text = letter_body = ""
+    for path in docs:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        if "resume" in os.path.basename(path).lower():
+            resume_text = text
+        else:
+            # The body drives the pairing; line numbers are reported against the whole
+            # file, because claim_text() has already dropped the header block and an
+            # offset into the remainder would send the reader to the wrong line.
+            letter_text, letter_body = text, claim_text(path, text)
+    if not resume_text:
+        print("  no resume found - nothing to pair against")
+    elif not os.path.isfile(STOPLIST):
+        print("  MISSING %s - the check cannot run without its noise floor"
+              % os.path.basename(STOPLIST))
+    else:
+        stopwords, _phrases = load_stoplist(STOPLIST)
+        rows, clean, unpaired = compression_pairs(resume_text, letter_body, stopwords)
+        for label, line, bullet, only_a, only_b in rows[:PAIR_CAP]:
+            ln, _ = locate_item(line, letter_text if label == "Letter topic sentence"
+                                else resume_text)
+            bn, _ = locate_item(bullet, resume_text)
+            src = "Letter" if label == "Letter topic sentence" else "Resume"
+            print("  %s  [%s L%d]" % (label, src, ln))
+            print("      line    %s" % line[:88])
+            print("      bullet  %s   (Resume L%d)" % (bullet[:80], bn))
+            print("      +line   %s" % fmt_words(only_a))
+            print("      +bullet %s" % fmt_words(only_b))
+        if len(rows) > PAIR_CAP:
+            print("      ... %d more differing pair(s) not shown (cap %d)"
+                  % (len(rows) - PAIR_CAP, PAIR_CAP))
+        print("  %d pair(s) matched cleanly; %d derived line(s) had no source bullet above"
+              " the overlap floor" % (clean, unpaired))
+    print("  Ask of each pair: does the derived line assert something its bullet does not?")
+    print("  DIRECTION IS NOT STABLE - the bullet is the wrong side as often as the line is,")
+    print("  so settle which side the facts file licenses before changing either. An")
+    print("  unpaired line is a different finding - a claim with no bullet under it.")
+
     print("\nAD VOCABULARY NOT LICENSED BY THE FACTS FILE   (warn - a question, not a defect)")
     ad_text = read_posting(app_dir)
     if not ad_text:
@@ -584,14 +900,19 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
         print("  MISSING %s - the check cannot run without its noise floor"
               % os.path.basename(STOPLIST))
     else:
-        doc_texts = []
+        # The offset comes back with the body because the line numbers printed below are
+        # reported against the WHOLE file - a letter's header block carries the role title
+        # and company name verbatim in its `Re:` line, and re-locating there would anchor
+        # this section to the header, the exact contamination dropping the block prevents.
+        splits = []
         for path in docs:
             with open(path, encoding="utf-8") as fh:
-                doc_texts.append(claim_text(path, fh.read()))
+                splits.append(claim_split(path, fh.read()))
         with open(facts_path, encoding="utf-8") as fh:
             facts_text = fh.read()
         stopwords, phrases = load_stoplist(STOPLIST)
-        found = ad_vocabulary(ad_text, doc_texts, facts_text, stopwords, phrases)
+        found = ad_vocabulary(ad_text, [body for _offset, body in splits],
+                              facts_text, stopwords, phrases)
         if not found:
             print("  clean - every phrase shared with the ad also appears in the facts file")
         else:
@@ -599,9 +920,10 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
                   % len(found))
             for phrase in found[:AD_VOCAB_CAP]:
                 where = []
-                for path, text in zip(docs, doc_texts):
-                    n, line = locate(phrase, text)
+                for path, (offset, body) in zip(docs, splits):
+                    n, line = locate(phrase, body)
                     if n:
+                        n += offset
                         short = "Resume" if "resume" in os.path.basename(path).lower() else "Letter"
                         where.append("%s L%d" % (short, n))
                 print("      %-52s %s" % (phrase[:52], ", ".join(where)))
@@ -620,9 +942,10 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
     return 0
 
 
-def report_corpus(root: str, cats: dict) -> int:
+def report_corpus(root: str, cats: dict, patterns_path: str, facts_path: str = None) -> int:
     print("CORPUS SWEEP - every Resume/CoverLetter document under %s" % root)
     print("This is the deliberate cross-application pass. Say so in your report.\n")
+    print_input_stamp(patterns_path, [facts_path] if facts_path else [])
     docs = []
     for dirpath, _dirnames, filenames in os.walk(root):
         for name in sorted(filenames):
@@ -666,7 +989,7 @@ def main() -> int:
         if not os.path.isdir(args.corpus):
             sys.stderr.write("not a directory: %s\n" % args.corpus)
             return 2
-        return report_corpus(args.corpus, cats)
+        return report_corpus(args.corpus, cats, args.patterns, args.facts)
     if not args.app_dir:
         ap.error("give an application directory, or --corpus ROOT")
     if not os.path.isdir(args.app_dir):

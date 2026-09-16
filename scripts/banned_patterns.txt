@@ -1,5 +1,5 @@
 # banned_patterns.txt - the single source for every banned string in an outgoing document.
-# source-hash: 9d0259f383d9 scripts/banned_patterns.txt
+# source-hash: a51131759969 scripts/banned_patterns.txt
 #
 # Read by mechanical_checks.py. Keep the human rationale, and every adjudicated exception,
 # in a notes file of your own - and read it before adding, removing or relaxing a pattern
@@ -70,7 +70,14 @@ re:\bthis role (asks for|needs|runs on|is about)\b
 re:\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,15}\b(asks?|is asking|needs|wants) for someone
 re:\b(asks?|is asking|wants) for someone who\b
 re:\ba role like this one\b
-re:\bthe same (discipline|rhythm|shape|instinct)\b[^.]{0,40}\byour\b
+# Alternation dropped: the four nouns were the ones seen at the time, but the construction
+# does not depend on them. A live instance used the identical shape with an uncovered noun and
+# was caught only because the broader `(your|this) ad` pattern below happened to fire on the
+# same sentence - a version grading against something the ad merely implied would have escaped.
+# Measured across a real corpus before and after: the broad form catches a handful more lines,
+# nearly all of them the real construction - worth adjudicating against a narrow pattern that
+# demonstrably misses live instances.
+re:\bthe same\b[^.]{0,40}\byour\b
 re:\banswers?\b[^.]{0,20}\bthe ad's\b
 # The letter naming "your ad"/"this ad" directly, in any construction - the self-referential
 # marker itself, not just the grading-formula shapes above.

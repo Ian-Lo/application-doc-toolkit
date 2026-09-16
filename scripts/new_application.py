@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: e6879dc3fd02 scripts/new_application.py
+# source-hash: a49c391365b5 scripts/new_application.py
 """Scaffold an Applications/ folder with the convention files and correct document filenames.
 
 `CLAUDE.md`'s "Application file structure" fixes two naming conventions that are easy to get
@@ -28,9 +28,10 @@ company. Silently CamelCasing it would hide a decision the operator should make 
 
 WHAT IT DELIBERATELY DOES NOT DO:
 
-  - **No `Company_Context.md`.** Recon writes that file, and `docs/Recon_Checklist.md`'s reuse
-    rule requires a judgement this script cannot make: symlink to an existing company context,
-    or break the link because the recon has gone stale. It prints the `ln -s` command and stops.
+  - **No recon content.** Recon writes findings, never this script. It DOES create the
+    `Company_Context.md` link (or seed a stub, where no recon exists yet for this company) - see
+    `existing_company_context()` and `scaffold()` below - so a folder never sits without a
+    `Company_Context.md` of some kind even before recon has run.
   - **No `decisions.md`.** `CLAUDE.md` says create it once history accumulates. An empty one
     from day zero is a file that reads as "no decisions were made".
   - **No ad capture.** `posting.md` is seeded with its required headers and nothing else.
@@ -187,17 +188,22 @@ def scaffold(apps_dir: str, day: str, company: str, abbrev: str, role: str,
     for name in written:
         print("    %s" % name)
 
+    # The link is created here, not printed as an `ln -s` for a human to run - a folder never
+    # sits without a Company_Context.md of some kind (real recon, or a seeded stub) even before
+    # recon has run.
     ctx = existing_company_context(apps_dir, company)
+    link_path = os.path.join(dest, "Company_Context.md")
     if ctx:
         rel = os.path.relpath(ctx, dest)
+        os.symlink(rel, link_path)
         print("\nRECON ALREADY EXISTS for %s:\n    %s" % (company, os.path.relpath(ctx, ROOT)))
-        print("Link it rather than re-researching, per docs/Recon_Checklist.md's reuse rule:")
-        print("    ln -s %s %s" % (rel, os.path.join("Applications", folder,
-                                                     "Company_Context.md")))
-        print("Only copy instead of linking if that recon has genuinely gone stale, and say "
-              "why in status.md.")
+        print("Linked Company_Context.md -> %s. Only replace it with a fresh copy instead of "
+              "the link if that recon has genuinely gone stale, and say why in status.md." % rel)
     else:
-        print("\nNo existing Company_Context.md for %s — recon runs fresh." % company)
+        with open(link_path, "w", encoding="utf-8") as fh:
+            fh.write("<!-- recon not yet run -->\n")
+        print("\nNo existing Company_Context.md for %s — seeded a stub; recon runs fresh."
+              % company)
 
     print("\nNext: paste the ad verbatim into posting.md (CLAUDE.md, \"Job posting capture\"), "
           "then recon, then drafting.")

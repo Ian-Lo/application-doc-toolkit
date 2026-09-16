@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 475284a33980 scripts/test_new_application.py
+# source-hash: 96f32d20a9b2 scripts/test_new_application.py
 """Tests for scripts/new_application.py.
 
 Stdlib unittest, no network, and every test writes into a `tempfile` tree - never the real
@@ -159,12 +159,32 @@ class TestScaffold(TreeCase):
                          "Sam_Okafor_Resume_260302_Acme_DutyManager.md")
         self.assertEqual(body, "")
 
-    def test_no_decisions_file_or_company_context(self):
-        """Both are deliberate omissions, not oversights."""
+    def test_no_decisions_file(self):
+        """A deliberate omission, not an oversight. Company_Context.md, unlike decisions.md,
+        is always created now - as a link or a seeded stub, per the tests below."""
         self.make()
         folder = os.path.join(self.apps, "2026-03-02_Acme_DutyManager")
         self.assertFalse(os.path.exists(os.path.join(folder, "decisions.md")))
-        self.assertFalse(os.path.exists(os.path.join(folder, "Company_Context.md")))
+
+    def test_scaffold_seeds_a_stub_when_no_recon_exists(self):
+        self.make()
+        folder = os.path.join(self.apps, "2026-03-02_Acme_DutyManager")
+        ctx = os.path.join(folder, "Company_Context.md")
+        self.assertTrue(os.path.isfile(ctx))
+        self.assertFalse(os.path.islink(ctx))
+        with open(ctx, encoding="utf-8") as fh:
+            self.assertIn("recon not yet run", fh.read())
+
+    def test_scaffold_links_to_existing_recon(self):
+        os.makedirs(os.path.join(self.apps, "2026-02-01_Acme_OtherRole"))
+        real = os.path.join(self.apps, "2026-02-01_Acme_OtherRole", "Company_Context.md")
+        with open(real, "w", encoding="utf-8") as fh:
+            fh.write("real recon\n")
+        self.make()
+        link = os.path.join(self.apps, "2026-03-02_Acme_DutyManager", "Company_Context.md")
+        self.assertTrue(os.path.islink(link))
+        with open(link, encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "real recon\n")
 
     def test_posting_seed_carries_source_and_verbatim_marker(self):
         self.make(url="https://example.com/jobs/999")

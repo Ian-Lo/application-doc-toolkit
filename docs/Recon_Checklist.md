@@ -1,4 +1,4 @@
-<!-- source-hash: 794ff7a63854 docs/Recon_Checklist.md -->
+<!-- source-hash: 9820fdfc72be docs/Recon_Checklist.md -->
 # Company recon checklist
 
 **Read this before starting recon on any company.**

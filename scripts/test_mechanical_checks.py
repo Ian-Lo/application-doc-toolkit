@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 9b8217ae8c34 scripts/test_mechanical_checks.py
+# source-hash: fa5b664a9a38 scripts/test_mechanical_checks.py
 """Tests for banned_patterns.txt and mechanical_checks.py.
 
     python3 test_mechanical_checks.py
@@ -15,6 +15,9 @@ until the noise had already produced a review tally recorded as clean that was n
 NEGATIVE probe below is a false positive somebody would otherwise have had to read.
 """
 
+import contextlib
+import hashlib
+import io
 import os
 import re
 import subprocess
@@ -58,15 +61,23 @@ PROBES = {
         ["a role like this one rewards", "in a role like this one"],
         ["a role unlike anything I've held", "this one role stood out"],
     ),
-    r"\bthe same (discipline|rhythm|shape|instinct)\b[^.]{0,40}\byour\b": (
+    r"\bthe same\b[^.]{0,40}\byour\b": (
+        # The four nouns an earlier, narrower alternation named, all still caught...
         ["the same discipline your external-worker provisioning work needs",
          "the same rhythm your team's release cycle runs on",
          "the same shape your audit process takes",
-         "the same instinct your escalation path relies on"],
-        # "the same discipline" on its own, or attached to a third-party noun rather than
-        # "your", must not trip - the formula is specifically the second-person comparison.
+         "the same instinct your escalation path relies on",
+         # ...plus the live instance the narrower alternation MISSED: it was caught only
+         # because `(your|this) ad` happened to fire on the same sentence, and a version
+         # grading against something the ad merely implied would have escaped.
+         "the same willingness to learn and develop your ad asks for"],
+        # The formula is specifically the second-person comparison. "the same X" on its own,
+        # or attached to a third-party noun rather than "your", must not trip - and neither
+        # must a "your" that lands beyond the 40-character proximity window.
         ["the same discipline I brought to the platform migration",
-         "the same rhythm as the previous engagement", "a similar discipline to theirs"],
+         "the same rhythm as the previous engagement", "a similar discipline to theirs",
+         "the same team, and after a long paragraph of quite unrelated intervening prose,"
+         " your name came up"],
     ),
     r"\banswers?\b[^.]{0,20}\bthe ad's\b": (
         ["answer the ad's interest in high-throughput processing directly",
@@ -299,6 +310,324 @@ class TestSectionBlocksProseRegression(unittest.TestCase):
         text = "## Professional Experience\n\n### Role One\n\n- a bullet\n"
         blocks = dict(mc.section_blocks(text))
         self.assertEqual(blocks["Professional Experience"], [])
+
+
+class TestBodyVsCompression(unittest.TestCase):
+    """BODY vs COMPRESSION: a summary sentence, a Core Skills entry or a letter's topic
+    sentence often generalises over an experience bullet in words that assert something
+    different from it - every fact underneath licensed, the generalisation over them not.
+
+    It is a PAIRING PRINTER, not a pass/fail test: the premise is that the words changed, so
+    the tests assert what gets PRINTED, never a verdict.
+    """
+
+    EXPERIENCE = (
+        "## Experience\n\n"
+        "### Acme Print Co - Solutions Architect (2007 - 2012)\n\n"
+        "- Designed managed print solutions for enterprise accounts, sizing device fleets\n"
+        "  against measured page volumes.\n"
+        "- Relocated a Meridian service bureau from Springfield to Shelbyville, rebuilding\n"
+        "  the server and network estate in the destination datacentre.\n"
+    )
+
+    def setUp(self):
+        self.stopwords, _phrases = mc.load_stoplist(mc.STOPLIST)
+
+    def pairs(self, resume, letter=""):
+        return mc.compression_pairs(resume, letter, self.stopwords)
+
+    def test_a_pair_whose_nouns_changed_is_printed_with_both_word_sets(self):
+        """Every fact underneath was licensed; the noun swap was not."""
+        resume = (
+            "## Core Skills\n\n"
+            "- Enterprise document services and device fleet sizing for enterprise accounts\n\n"
+            + self.EXPERIENCE
+        )
+        rows, _clean, _unpaired = self.pairs(resume)
+        self.assertEqual(len(rows), 1, rows)
+        label, line, bullet, only_line, only_bullet = rows[0]
+        self.assertEqual(label, "Core Skills")
+        self.assertIn("Enterprise document services", line)
+        self.assertIn("managed print", bullet)
+        self.assertIn("document", only_line)
+        self.assertIn("print", only_bullet)
+
+    def test_a_geography_swap_is_printed(self):
+        """The second measured shape: a correct-looking line naming the wrong axis."""
+        resume = (
+            "## Core Skills\n\n"
+            "- Datacentre relocation for a Meridian service bureau, production to DR\n\n"
+            + self.EXPERIENCE
+        )
+        rows, _clean, _unpaired = self.pairs(resume)
+        self.assertEqual(len(rows), 1, rows)
+        _label, _line, bullet, only_line, only_bullet = rows[0]
+        self.assertIn("Springfield to Shelbyville", bullet)
+        self.assertIn("production", only_line)
+        self.assertIn("springfield", only_bullet)
+        self.assertIn("shelbyville", only_bullet)
+
+    def test_a_faithful_pair_is_not_printed_but_is_counted_clean(self):
+        """Output size is a hard constraint: a faithful pair costs one shared line, not five."""
+        resume = (
+            "## Core Skills\n\n"
+            "- Designed managed print solutions for enterprise accounts, sizing device fleets\n\n"
+            + self.EXPERIENCE
+        )
+        rows, clean, _unpaired = self.pairs(resume)
+        self.assertEqual(rows, [])
+        self.assertEqual(clean, 1)
+
+    def test_a_derived_line_with_no_plausible_bullet_is_left_unpaired(self):
+        """Guessing a pair trains the ignore habit. An unsupported claim is a different
+        finding and this section must not invent one."""
+        resume = (
+            "## Core Skills\n\n"
+            "- Actuarial reserving, mortality modelling and Solvency II capital reporting\n\n"
+            + self.EXPERIENCE
+        )
+        rows, clean, unpaired = self.pairs(resume)
+        self.assertEqual(rows, [])
+        self.assertEqual(clean, 0)
+        self.assertEqual(unpaired, 1)
+
+    def render(self, resume):
+        """The printed BODY vs COMPRESSION section for a resume, via the real report."""
+        with tempfile.TemporaryDirectory() as tmp:
+            with open(os.path.join(tmp, "Jane_Doe_Resume_260101_Acme_Role.md"), "w",
+                      encoding="utf-8") as fh:
+                fh.write(resume)
+            r = subprocess.run([sys.executable, CHECKS, tmp],
+                               capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        body = r.stdout.split("BODY vs COMPRESSION", 1)[1]
+        return body.split("\nAD VOCABULARY", 1)[0]
+
+    def test_the_cap_holds_and_the_overflow_is_announced(self):
+        """PAIR_CAP. The whole report is pasted into every subagent brief."""
+        skills = "".join(
+            "- Enterprise document service %d and device fleet sizing for enterprise accounts\n"
+            % i for i in range(mc.PAIR_CAP + 4))
+        resume = "## Core Skills\n\n" + skills + "\n" + self.EXPERIENCE
+        rows, _clean, _unpaired = self.pairs(resume)
+        self.assertGreater(len(rows), mc.PAIR_CAP)
+        out = self.render(resume)
+        printed = [l for l in out.splitlines() if l.startswith("      line ")]
+        self.assertEqual(len(printed), mc.PAIR_CAP)
+        self.assertIn("more differing pair(s) not shown", out)
+
+    def test_a_letter_topic_sentence_is_paired_against_resume_bullets(self):
+        """Both directions: sometimes the letter is right and the resume wrong, sometimes
+        the reverse - so the letter's topic sentences are derived lines too."""
+        resume = "## Core Skills\n\n- Unrelated skill entry about nothing at all\n\n" + self.EXPERIENCE
+        letter = ("Enterprise document services ran through the Acme years, sizing device\n"
+                  "fleets for enterprise accounts. A second sentence that must be ignored.\n")
+        rows, _clean, _unpaired = self.pairs(resume, letter)
+        labels = [r[0] for r in rows]
+        self.assertIn("Letter topic sentence", labels)
+        row = rows[labels.index("Letter topic sentence")]
+        self.assertTrue(row[1].startswith("Enterprise document services"), row[1])
+        self.assertNotIn("second sentence", row[1])
+
+    def test_only_the_first_sentence_of_a_letter_paragraph_is_taken(self):
+        letter = "First sentence here about print solutions. Second sentence here.\n"
+        lines = mc.derived_lines("", letter)
+        self.assertEqual(lines, [("Letter topic sentence",
+                                  "First sentence here about print solutions.")])
+
+    def test_the_valediction_ends_the_letter_body(self):
+        letter = ("A real body paragraph about managed print solutions.\n\n"
+                  "Regards,\\\n\nJane Doe\n")
+        lines = mc.derived_lines("", letter)
+        self.assertEqual(len(lines), 1, lines)
+
+    def test_the_summary_paragraph_is_split_into_sentences(self):
+        resume = ("## Professional Summary\n\n"
+                  "First claim about print. Second claim about datacentres.\n\n"
+                  "## Core Skills\n\n- A skills entry\n")
+        lines = [l for lab, l in mc.derived_lines(resume, "") if lab == "Professional Summary"]
+        self.assertEqual(lines, ["First claim about print.",
+                                 "Second claim about datacentres."])
+
+    def test_education_and_certifications_are_not_source_bullets(self):
+        """They make no achievement claims, so nothing in them can be a source."""
+        resume = (self.EXPERIENCE +
+                  "\n## Education\n\n- Master of Engineering, State University\n"
+                  "\n## Certifications and training\n\n- ITIL Foundation certificate\n")
+        bullets = mc.source_bullets(resume)
+        self.assertTrue(any("managed print" in b for b in bullets))
+        self.assertFalse(any("Master of Engineering" in b for b in bullets), bullets)
+        self.assertFalse(any("ITIL" in b for b in bullets), bullets)
+
+    def test_a_date_fragment_is_never_offered_as_a_source_bullet(self):
+        """A bare date range is five tokens and would otherwise pair with a whole summary
+        sentence on the year alone. PAIR_MIN_CONTENT is the guard."""
+        score, bullet, _a, _b = mc.best_source(
+            "Delivered enterprise infrastructure across Sep 2019 engagements in Springfield",
+            ["Sep 2016 - Sep 2019"], self.stopwords)
+        self.assertEqual((score, bullet), (0.0, ""))
+
+    def test_plural_only_stemming(self):
+        """service/services must not read as a difference; verb forms are left alone on
+        purpose, because a crude stem is a word the reader cannot read back."""
+        self.assertEqual(mc.word_stem("services"), mc.word_stem("service"))
+        self.assertEqual(mc.word_stem("capabilities"), "capability")
+        self.assertEqual(mc.word_stem("business"), "business")
+        self.assertEqual(mc.word_stem("analysis"), "analysis")
+
+    def test_the_section_labels_and_explains_itself(self):
+        out = self.render("## Core Skills\n\n- A skills entry with several content words\n\n"
+                          + self.EXPERIENCE)
+        self.assertIn("DIRECTION IS NOT STABLE", out)
+        self.assertIn("matched cleanly", out)
+
+
+class TestClaimSplitOffset(unittest.TestCase):
+    """AD VOCABULARY once reported cover-letter lines low by the header block's own length.
+
+    `claim_split()` drops the header block and `locate()` then numbers from line 1 of what
+    remains; every other section of the same report numbered the same letter correctly,
+    which is what pins the defect to this one path. A wrong anchor still looks like a
+    finding, and this report is meant to be the one pattern search a Read-only reviewer has.
+    """
+
+    HEADER = ("Jane Doe\n"
+              "Springfield · jane@example.com\n"
+              "0400 000 000\n"
+              "\n"
+              "10 September 2026\n"
+              "\n"
+              "Re: Senior Data Analyst\n"
+              "\n"
+              "Dear Hiring Manager,\n")          # 9 lines; the body starts at line 10
+
+    BODY = "I have delivered bearings power transmission work in regulated environments.\n"
+
+    def test_the_offset_is_the_number_of_lines_dropped(self):
+        offset, body = mc.claim_split("Jane_Doe_CoverLetter_260910_Acme_Role.md",
+                                      self.HEADER + self.BODY)
+        self.assertEqual(offset, 9)
+        self.assertTrue(body.startswith("I have delivered"))
+
+    def test_a_body_phrase_reports_its_whole_file_line(self):
+        """The defect itself. locate() alone says 1; locate() + offset says 10."""
+        text = self.HEADER + self.BODY
+        offset, body = mc.claim_split("Jane_Doe_CoverLetter_260910_Acme_Role.md", text)
+        n, _line = mc.locate("bearings power transmission", body)
+        self.assertEqual(n, 1)                   # numbering the body alone - the bug
+        self.assertEqual(n + offset, 10)         # the whole-file line - what is reported
+        self.assertIn("bearings power transmission", text.splitlines()[9].lower())
+
+    def test_a_resume_gets_offset_zero(self):
+        """First fallthrough. Nothing is dropped, so adding the offset must be a no-op."""
+        text = "# Jane Doe\n\n## Professional Experience\n\n### Acme Print Co - CSE\n"
+        offset, body = mc.claim_split("Jane_Doe_Resume_260910_Acme_Role.md", text)
+        self.assertEqual(offset, 0)
+        self.assertEqual(body, text)
+
+    def test_a_letter_with_no_salutation_gets_offset_zero(self):
+        """Second fallthrough. A letter with no `Dear` in the first 14 lines keeps every
+        line, so an offset here would double-count into thin air."""
+        text = "Jane Doe\nSpringfield\n\nI have delivered data fusion work.\n"
+        offset, body = mc.claim_split("Jane_Doe_CoverLetter_260910_Acme_Role.md", text)
+        self.assertEqual(offset, 0)
+        self.assertEqual(body, text)
+
+    def test_claim_text_still_returns_the_body_alone(self):
+        """The wrapper the one non-reporting call site still uses."""
+        text = self.HEADER + self.BODY
+        self.assertEqual(mc.claim_text("Jane_Doe_CoverLetter_260910_Acme_Role.md", text),
+                         mc.claim_split("Jane_Doe_CoverLetter_260910_Acme_Role.md", text)[1])
+
+
+class TestInputStamp(unittest.TestCase):
+    """The report used to carry no record of when it ran or what it read, so a stale paste
+    (a document edited, or the pattern file changed, after the paste was taken) was
+    invisible to a Read-only reviewer. The stamp makes that legible, not impossible: the
+    reviewer can read it but cannot regenerate it.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.app = os.path.join(self._tmp.name, "2026-01-01_Acme_DataAnalyst")
+        os.makedirs(self.app)
+        self.resume = os.path.join(self.app, "Jane_Doe_Resume_260101_Acme_Role.md")
+        self.letter = os.path.join(self.app, "Jane_Doe_CoverLetter_260101_Acme_Role.md")
+        with open(self.resume, "w", encoding="utf-8") as fh:
+            fh.write("# Jane Doe\n\n## Professional Experience\n\n- A bullet.\n")
+        with open(self.letter, "w", encoding="utf-8") as fh:
+            fh.write("Jane Doe\\\njane@example.com\n\nRe: Data Analyst\n\nDear Hiring Manager,\n\n"
+                      "Body.\n\nRegards,\\\nJane Doe\n")
+
+    def report(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            mc.report_application(self.app, mc.load_categories(BANNED), [], BANNED)
+        return buf.getvalue()
+
+    def test_stamp_names_the_pattern_file_fingerprint(self):
+        out = self.report()
+        with open(BANNED, "rb") as fh:
+            expected = hashlib.sha256(fh.read()).hexdigest()[:12]
+        self.assertIn(expected, out)
+
+    def test_pattern_file_edit_changes_the_fingerprint(self):
+        """The break-it probe."""
+        tmp_banned = os.path.join(self._tmp.name, "banned_patterns.txt")
+        with open(BANNED, "rb") as fh:
+            original = fh.read()
+        with open(tmp_banned, "wb") as fh:
+            fh.write(original)
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            mc.report_application(self.app, mc.load_categories(tmp_banned), [], tmp_banned)
+        out1 = buf.getvalue()
+        fp1 = hashlib.sha256(original).hexdigest()[:12]
+        self.assertIn(fp1, out1)
+
+        with open(tmp_banned, "ab") as fh:
+            fh.write(b"\n# probe comment\n")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            mc.report_application(self.app, mc.load_categories(tmp_banned), [], tmp_banned)
+        out2 = buf.getvalue()
+        with open(tmp_banned, "rb") as fh:
+            fp2 = hashlib.sha256(fh.read()).hexdigest()[:12]
+        self.assertNotEqual(fp1, fp2)
+        self.assertIn(fp2, out2)
+
+    def test_every_document_read_is_listed_with_its_mtime(self):
+        fixed = 1700000000
+        os.utime(self.resume, (fixed, fixed))
+        os.utime(self.letter, (fixed, fixed))
+        expected_mtime = mc.datetime.fromtimestamp(fixed).astimezone().strftime(
+            "%Y-%m-%d %H:%M:%S %z")
+        out = self.report()
+        self.assertIn("%s  mtime %s" % (os.path.basename(self.resume), expected_mtime), out)
+        self.assertIn("%s  mtime %s" % (os.path.basename(self.letter), expected_mtime), out)
+
+    def test_corpus_banner_carries_the_stamp(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            mc.report_corpus(self._tmp.name, mc.load_categories(BANNED), BANNED)
+        out = buf.getvalue()
+        self.assertIn("generated ", out)
+        self.assertIn("patterns ", out)
+
+    def test_stamp_is_bounded(self):
+        out = self.report()
+        lines = out.splitlines()
+        start = next(i for i, l in enumerate(lines) if l.startswith("generated "))
+        # inputs printed: resume, letter - no posting and no --facts given in this fixture,
+        # and both must be skipped rather than printed as missing.
+        block = []
+        for l in lines[start + 1:]:
+            if not l.startswith("  "):
+                break
+            block.append(l)
+        self.assertEqual(len(block), 2)
 
 
 class TestScriptRuns(unittest.TestCase):
