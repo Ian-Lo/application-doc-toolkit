@@ -1,5 +1,5 @@
 # banned_patterns.txt - the single source for every banned string in an outgoing document.
-# source-hash: a51131759969 scripts/banned_patterns.txt
+# source-hash: 4d4c9c0b903a scripts/banned_patterns.txt
 #
 # Read by mechanical_checks.py. Keep the human rationale, and every adjudicated exception,
 # in a notes file of your own - and read it before adding, removing or relaxing a pattern
@@ -60,14 +60,21 @@ re:\b(sit|sits|sitting|sat)\b
 # The self-grading formula: the letter tells the employer what their own role is about,
 # then grades the candidate against it. Observed in 14 cover letters from 6+ independent
 # drafting sessions - a corpus-level template, not one batch's tic.
-re:\bthis role (asks for|needs|runs on|is about)\b
+# Widened later: "your role" as well, "asks", "runs across", "is close to", and up to ten
+# non-full-stop characters between the noun and the verb, after first drafts evaded the
+# narrower form repeatedly. One strict-superset entry replaces the original, so no line
+# reports twice.
+re:\b(this|your) role\b[^.]{0,10}\b(asks?|needs|runs (on|across)|is (about|close to))
 
 # Widened later, on a third pass. The narrow pattern above only catches "this role" as the
 # subject; the formula paraphrases around it just as readily with "your ad", "the ad", "this
 # posting", or a demonstrative comparison ("the same discipline ... your ..."). On the source
 # corpus it reached 7 letters in one pass by paraphrase alone and reported `tic clean` on
 # every one; two of those seven survived a full review round before being caught by hand.
-re:\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,15}\b(asks?|is asking|needs|wants) for someone
+# Widened again: the "for someone" tail is dropped and the gap raised to 25, because drafts
+# kept writing "the specific background this role is asking for" past a 15-character gap.
+# The strict superset replaced the original entry.
+re:\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,25}\b(asks?|is asking|needs|wants)\b
 re:\b(asks?|is asking|wants) for someone who\b
 re:\ba role like this one\b
 # Alternation dropped: the four nouns were the ones seen at the time, but the construction
@@ -85,7 +92,14 @@ re:\b(your|this) ad\b
 
 # A self-diminishing comparative attached to a requirement the candidate does not need
 # to concede.
-the closest thing on my record to
+# Widened: the original literal ("the closest thing on my record to") was evaded by swapping
+# one noun ("the closest parallel I can offer"). The regex below replaced it.
+re:\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b
+
+# The self-diminishing comparative again, graded against the ad ("is close to what I did"),
+# and the letter pointing back at its own link as a closer. `tic`: adjudicate, never hard-fail.
+re:is close to (what|the work) I did
+re:\b(link|corpus)\b[^.]{0,10}\babove is there if\b
 
 # These almost never describe the candidate's own approval authority - they describe a
 # client's procurement gate. Licensed instances exist; adjudicate before removing a hit.
@@ -142,7 +156,8 @@ re:counts me out
 re:not the candidate
 re:waste anyone's
 re:waste your time
-re:rather say (so|that) (now|plainly)
+# Widened: adds "it" and the bare "rather say now"; replaced the narrower entry.
+re:rather say (so|that|it)? ?(now|plainly)
 re:stating that plainly
 re:saying that upfront
 re:rather than dressing it up

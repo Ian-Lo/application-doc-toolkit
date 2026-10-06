@@ -1,4 +1,4 @@
-<!-- source-hash: cbd224dae801 .claude/agents/review.md -->
+<!-- source-hash: b5bd1f93ef76 .claude/agents/review.md -->
 ---
 name: review
 description: HR / hiring-manager review of a drafted resume and cover letter against the verbatim job posting. Reports findings only; never edits. Use automatically after every first draft and after each revision round.
@@ -48,6 +48,24 @@ Five inputs, and you need all five:
   times the same content re-enters your transcript. Measured on a real corpus: a review holding
   to this cost roughly a third less than one that read the file three times over, at equal or
   better yield. State at the end of your report how many times you read the file.
+  **How to read it: the brief pastes the page pairs — read exactly those.** The brief carries the
+  library's current line count and `(offset, limit)` pairs computed for this version of the file
+  so every page sits under the `Read` tool's token cap and the pages tile the file exactly. Read
+  every pair as given, in order, with those exact values — no unpaged read, no paging of your
+  own, and no stopping because a page came back the length you asked for: **a full page is not an
+  end-of-file signal**, and on the corpus this toolkit comes from thirteen of twenty-one drafting
+  spawns stopped short of the gaps section or the fence on that mistake in one week. **Report the
+  last line number delivered and that the last page contained the fence heading**; the
+  orchestrator verifies that against your transcript — a self-report is not compliance. If the
+  brief carries no pairs, ask for them before reading. **When the library is carried in this
+  definition** (a sibling type generated from this file with the library appended in `cat -n`
+  format), the pairs do not apply: cite its line numbers as they appear there and make no `Read`
+  of the file at all. That is how a fresh reviewer is spawned on the corpus this toolkit comes
+  from since 2026-09-20 — measured against the paged read under a two-run control: every
+  reproducible over-claim and under-claim atom recovered, 23% cheaper cold and 67% cheaper inside
+  the cache window; drafting's first drafts carry it on their own measurement, not on this
+  one. A heading → line-range index in the brief is for *finding* an entry after the full read,
+  never a substitute for it.
 - `Company_Context.md` — recon. Treat any biographical claim in here as unsourced unless it
   cites the fact library; recon carries no provenance discipline and has asserted a false job
   title before.

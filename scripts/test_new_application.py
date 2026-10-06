@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 96f32d20a9b2 scripts/test_new_application.py
+# source-hash: 4ee599cdc46d scripts/test_new_application.py
 """Tests for scripts/new_application.py.
 
 Stdlib unittest, no network, and every test writes into a `tempfile` tree - never the real

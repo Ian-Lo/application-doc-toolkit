@@ -1,4 +1,4 @@
-<!-- source-hash: 728b9c81bba1 docs/Review_Checklist.md -->
+<!-- source-hash: 442e85bce99f docs/Review_Checklist.md -->
 # Application review checklist
 
 **Read this before reviewing any resume or cover letter.** Read `Writing_Style.md` alongside it —
@@ -18,9 +18,9 @@ checks, not as your own baselines.
    stop and say so. Do not review against a paraphrase — a summary preserves the topics and
    discards the vocabulary, and the whole gap analysis then runs on the wrong words. This once
    produced two full review rounds recording a gap the candidate did not have.
-2. **Gather all four inputs**: the verbatim ad, the fact library, `Company_Context.md`, and
-   the drafted documents. A review missing the fact library cannot check the thing that matters
-   most.
+2. **Gather all five inputs**: the mechanical-checks report pasted into your brief, the verbatim
+   ad, the fact library, `Company_Context.md`, and the drafted documents. A review missing the
+   fact library cannot check the thing that matters most.
 
 ## 1. The subtractive activity diff
 
@@ -83,7 +83,8 @@ wording:
   its entire requirements list with "To be considered for this role, you will *ideally* bring:" —
   **not one stated essential in the whole ad** — and the application conceded against it anyway,
   three times in one pair.
-- **An "or" has two doors. Don't close both.** The same ad wrote "certification, **or** a strong
+- **An "or" has as many doors as it lists. Don't close one the ad did not ask about, and never
+  close them all.** The same ad wrote "certification, **or** a strong
   and demonstrated amount of hands-on experience"; the cover letter denied the experience *and*
   volunteered the missing certification, in one clause, in its second sentence.
 - Silence in the fact library means nobody has asked the candidate, not that they lack the skill.
@@ -125,7 +126,8 @@ brief** — hand-typed grep patterns are the specific failure the script replace
 
 It covers the banned strings, the letter's header block, link atomicity, every duration phrase
 printed beside its canonical span from the facts file, every section header printed beside its
-block contents, and — when it is run with `--facts` — the ad vocabulary the facts file does not
+block contents, each summary sentence, Core Skills entry and letter topic sentence beside the
+experience bullet it compresses (section 7b), and — when it is run with `--facts` — the ad vocabulary the facts file does not
 license, which is section 2's check computed rather than eyeballed.
 
 Three reasons this is a script and not a list of greps you run yourself:
@@ -158,17 +160,28 @@ regardless of how good the argument is. The convention:
 ```
 Jane Doe\
 Springfield\
-+1 555 0100 | jane@example.com | linkedin.com/in/janedoe/
++1 555 0100 | jane@example.com\
+<https://www.linkedin.com/in/janedoe/>
 
-<addressee — company, or named contact>
+<Company or agency>\
+<Hiring team, named manager, or the address the ad gives>
 
 Re: <role title exactly as advertised>
 
 Dear <salutation>,
+
+...
+
+Regards,\
+Jane Doe
 ```
 
-Note the trailing `\` hard breaks on the name/city lines and after `Regards,` — losing them
-collapses the block into one run-on line when rendered.
+This is the template for a **new** letter: each URL is a bare autolink on its own line
+(`Writing_Style.md`, "Recoverable links"). A letter drafted before that keeps its older one-line
+contact shape, and that is not a finding. Note the trailing `\` hard breaks on every header line
+but the last, between addressee lines when there is more than one, and after `Regards,` — losing
+them collapses the block into one run-on line when rendered. (Same template as `Writing_Style.md`,
+"The letter header block" — keep in sync.)
 
 - Every `[link text](url)` is on one line. A bracketed span split by a line wrap silently stops
   being a link.
@@ -207,25 +220,47 @@ Two specific shapes to expect:
   header fifteen lines above a summary stating the candidate was not account-aligned).
 - A header contradicted by the application's own status-file gap note — see step 8.
 
-### 7b. Run the same diff on the cover letter's topic sentences
+### 7b. Read the `BODY vs COMPRESSION` pairs in the mechanical-checks report
 
 Measured as **the second-highest-yield check** of the review round that added it: three of six
 body paragraphs over-claimed this way while **every individual fact underneath them was licensed
 and accurately written.**
 
-A resume header generalises the items beneath it into a capability noun. **A cover-letter
-paragraph's topic sentence does exactly the same thing to its own list** — and nothing else in
-this checklist catches it. The section-1 accretion diff runs on sentences and scores each listed
-item clean; the sentence that generalises them is not an item, so it passes.
+**Why nothing else catches it.** A resume header generalises the items beneath it into a capability
+noun. **A cover-letter paragraph's topic sentence, a Professional Summary sentence and a Core
+Skills entry each do exactly the same thing to a bullet written elsewhere** — and no other check
+here sees it. The section-1 accretion diff runs on sentences and scores each listed item clean; the
+sentence that generalises them is not an item, so it passes. Step 7 runs on headers, and a topic
+sentence is not a header.
 
-**Same three steps as step 7:** list the paragraph's items, read its topic sentence, ask what the
-sentence asserts that the items do not evidence.
+**Printed, not done by hand.** `mechanical_checks.py`'s `BODY vs COMPRESSION` section does the
+pairing. **Do not redo it by hand** — if you have no Grep, the pasted report is the only pattern
+search available to you.
 
-The shape to recognise: a topic sentence claiming *"Explaining a service commitment to the
-people who have to work to it runs throughout these roles"* — followed by five deliveries, of
-which **exactly one** was about a service commitment. Each was licensed; the generalisation was
-not. Note that the defect was **introduced by a round-1 fix** that added the paragraph, so run
-this check hardest on paragraphs a previous round created or whose item list changed.
+**What the section gives you, per pair:** the derived line (a summary sentence, a Core Skills
+entry, or a letter's topic sentence), the single best-matching experience bullet beneath it, and
+the content words present on **one side only** — `+line` and `+bullet`.
+
+**The three things to do with it:**
+
+1. **Read `+line` first.** Words there are what the derived line asserts and its bullet does not.
+   That is the over-claim direction.
+2. **Then read `+bullet`.** **Direction is not stable.** Sometimes the letter is right and the
+   resume wrong, sometimes the reverse. Settle which side the fact library licenses before
+   recommending a change to either — a finding that names the wrong side costs a whole round.
+3. **Treat an unpaired derived line as a different finding.** The section reports the count and
+   deliberately prints no bullet for it: below the overlap floor there is no plausible source, which
+   means a claim with nothing under it, not a compression defect. Chase it as an unsupported claim.
+
+**The printed pairs are not the whole set.** Pairs with nothing on one side only are counted as
+`matched cleanly` rather than printed, and the printed list is capped. When the count of differing
+pairs exceeds the cap, say so in your report and read the documents directly for the rest.
+
+The shape to recognise: a topic sentence claiming *"Explaining a service commitment to the people
+who have to work to it runs throughout these roles"* — followed by five deliveries, of which
+**exactly one** was about a service commitment. Each was licensed; the generalisation was not. Note
+that the defect was **introduced by a round-1 fix** that added the paragraph, so read these pairs
+hardest on paragraphs a previous round created or whose item list changed.
 
 **The narrower claim is usually already available and usually answers the ad better.**
 

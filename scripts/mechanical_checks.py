@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: e0e8b28b635f scripts/mechanical_checks.py
+# source-hash: 956f086cec30 scripts/mechanical_checks.py
 """mechanical_checks.py - a document reviewer's mechanical pass, as one command.
 
     python3 mechanical_checks.py path/to/one-application-folder
@@ -150,8 +150,16 @@ def unwrap_blocks(text: str) -> list:
     reviewer caught it, and a wrap-aware rescan then found three more evading the same
     way. Per-line scanning alone is not a scan of the document; it is a scan of its
     typesetting.
+
+    A bullet-marked line does not always start a block. It does when the current block
+    itself began with a bullet (the next item of a list, including after a wrapped item's
+    unpunctuated continuation line) or when the block's last line ended a sentence.
+    Otherwise it is prose that wrapped onto a " - " aside, and it continues the paragraph:
+    a sentence once wrapped as "... cardinality and grain" / "- comes from ..." and the
+    flush on the leading dash hid a hard overclaim from every scanner.
     """
     blocks, lines_in, cur = [], [], []
+    bullet_block = False
 
     def flush():
         if cur:
@@ -164,12 +172,19 @@ def unwrap_blocks(text: str) -> list:
         if not s or s.startswith(("#", ">")):
             flush()
             continue
-        if s.startswith(("-", "*", "•")):
+        is_bullet = s.startswith(BULLET_MARKS)
+        if is_bullet and cur and (bullet_block or cur[-1].endswith(SENTENCE_ENDS)):
             flush()
+        if not cur:
+            bullet_block = is_bullet
         lines_in.append(n)
         cur.append(s)
     flush()
     return blocks
+
+
+BULLET_MARKS = ("-", "*", "•")
+SENTENCE_ENDS = (".", ":", "!", "?", ")", "]", "}", '"', "'", "”", "’")
 
 
 def hits_in(text: str, patterns) -> list:
@@ -183,17 +198,19 @@ def hits_in(text: str, patterns) -> list:
     found = []
     line_hits = set()
     for n, line in enumerate(text.splitlines(), start=1):
+        folded = line.casefold()
         for p in patterns:
             if p.is_regex:
                 if p.rx.search(line):
                     found.append((n, p.raw, line.strip()))
                     line_hits.add((n, p.raw))
-            elif p.lit and p.lit in line.casefold():
+            elif p.lit and p.lit in folded:
                 found.append((n, p.raw, line.strip()))
                 line_hits.add((n, p.raw))
     for start, end, joined in unwrap_blocks(text):
+        folded = joined.casefold()
         for p in patterns:
-            hit = p.rx.search(joined) if p.is_regex else (p.lit and p.lit in joined.casefold())
+            hit = p.rx.search(joined) if p.is_regex else (p.lit and p.lit in folded)
             if not hit:
                 continue
             if any((n, p.raw) in line_hits for n in range(start, end + 1)):

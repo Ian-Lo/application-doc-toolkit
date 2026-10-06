@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: a49c391365b5 scripts/new_application.py
+# source-hash: 6e6c04f83651 scripts/new_application.py
 """Scaffold an Applications/ folder with the convention files and correct document filenames.
 
 `CLAUDE.md`'s "Application file structure" fixes two naming conventions that are easy to get

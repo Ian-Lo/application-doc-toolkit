@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: fa5b664a9a38 scripts/test_mechanical_checks.py
+# source-hash: d6f9e17a8014 scripts/test_mechanical_checks.py
 """Tests for banned_patterns.txt and mechanical_checks.py.
 
     python3 test_mechanical_checks.py
@@ -41,16 +41,28 @@ PROBES = {
         ["university of sydney", "the position was", "data visualisation",
          "optimisation work", "sensitive data", "the site was", "repositories"],
     ),
-    r"\bthis role (asks for|needs|runs on|is about)\b": (
+    # Replaced `\bthis role (asks for|needs|runs on|is about)\b`; that entry's four positives
+    # come first and must still hit.
+    r"\b(this|your) role\b[^.]{0,10}\b(asks?|needs|runs (on|across)|is (about|close to))": (
         ["the discipline this role runs on", "the coordination this role needs",
-         "what this role asks for", "the work this role is about"],
-        ["this roles needs", "the role needs a writer", "this role, needs"],
+         "what this role asks for", "the work this role is about",
+         "what your role asks", "the estate this role runs across", "this role is close to",
+         "the depth this role really needs",
+         # A comma between noun and verb is a HIT now: the ten-character gap deliberately
+         # crosses punctuation other than a full stop.
+         "this role, needs"],
+        ["this roles needs", "the role needs a writer", "this role is demanding but rewarding",
+         "in this role. Needs analysis came later", "your roles are about scale"],
     ),
-    r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,15}\b(asks?|is asking|needs|wants) for someone": (
+    # Replaced the `... for someone` form, whose four positives come first and must still hit.
+    r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,25}\b(asks?|is asking|needs|wants)\b": (
         ["your ad asks for someone who", "the ad is asking for someone with",
-         "this posting wants for someone", "this role needs for someone able to"],
+         "this posting wants for someone", "this role needs for someone able to",
+         "the specific background this role is asking for", "the same shape this role asks for",
+         "exactly what your ad wants"],
         ["your advice asks for clarity", "the address needs someone to confirm it",
-         "this role is demanding but rewarding"],
+         "this role is demanding but rewarding", "this role asked me to travel",
+         "this posting, which I read twice, needs"],
     ),
     r"\b(asks?|is asking|wants) for someone who\b": (
         ["asks for someone who can", "is asking for someone who has",
@@ -90,9 +102,24 @@ PROBES = {
          "in your ad", "reading this ad closely"],
         ["your advice was useful", "this address is current", "your address book"],
     ),
-    "the closest thing on my record to": (
-        ["the closest thing on my record to a formal writing sample"],
-        ["the closest match on my record"],
+    # Replaced the literal `the closest thing on my record to`; its positive comes first and
+    # must still hit.
+    r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b": (
+        ["the closest thing on my record to a formal writing sample",
+         "the closest thing in my history to", "the closest parallel I can offer",
+         "the closest analogue I have", "the closest analog on my record",
+         "the closest match on my record"],
+        ["the closest office is in Parramatta", "my closest thing to hand",
+         "the closest match. I have more below"],
+    ),
+    r"is close to (what|the work) I did": (
+        ["this is close to what I did at my last employer", "which is close to the work I did there"],
+        ["is close to what I do now", "was close to what I did"],
+    ),
+    r"\b(link|corpus)\b[^.]{0,10}\babove is there if\b": (
+        ["The corpus linked above is there if you want the detail",
+         "the link above is there if useful"],
+        ["the link above is broken", "the linked article above is there if needed"],
     ),
     r"\bsign-?off\b": (
         ["procurement sign-off", "went to signoff", "sign-off was granted"],
@@ -165,7 +192,10 @@ PROBES = {
     r"not the candidate": (["I am not the candidate you need"], ["another candidate"]),
     r"waste anyone's": (["I won't waste anyone's time"], ["a waste of effort"]),
     r"waste your time": (["rather than waste your time"], ["a waste of effort"]),
-    r"rather say (so|that) (now|plainly)": (["I would rather say so now"], ["I would rather say nothing"]),
+    # Replaced `rather say (so|that) (now|plainly)`; its positive comes first and must still hit.
+    r"rather say (so|that|it)? ?(now|plainly)": (
+        ["I would rather say so now", "I'd rather say it plainly", "I would rather say now"],
+        ["I would rather say nothing", "I would rather not say so now"]),
     r"stating that plainly": (["stating that plainly upfront"], ["stated plainly in the resume"]),
     r"saying that upfront": (["saying that upfront matters"], ["said upfront"]),
     r"rather than dressing it up": (["rather than dressing it up"], ["dressed up language"]),
@@ -261,6 +291,24 @@ class TestWrappedPhraseRegression(unittest.TestCase):
         hits = mc.hits_in(text, self.cats["selfdq"])
         self.assertEqual(len(hits), 1, hits)
         self.assertIn("(wrapped)", hits[0][2])
+
+    def test_prose_wrapped_onto_a_dash_aside_is_caught(self):
+        """A sentence wrapped onto its own " - " aside: the old unwrap flushed on the leading
+        "-" and a phrase split across that wrap passed every scanner. The previous block's
+        last line ends mid-sentence, so the dash line joins it."""
+        text = ("The rest of the sentence, and it is not negotiable, if the clearance\n"
+                "- requirement is non-negotiable, that is a fair call.\n")
+        hits = mc.hits_in(text, self.cats["selfdq"])
+        self.assertEqual(len(hits), 1, hits)
+        self.assertTrue(hits[0][2].startswith("(wrapped)"), hits)
+
+    def test_wrapped_bullet_does_not_join_the_next_bullet(self):
+        """The other half of the rule: a bullet whose continuation line ends without
+        punctuation is still followed by a NEW block when the next line is a bullet."""
+        text = ("- Built a reporting mart, modelled\n"
+                "  with the client data team\n"
+                "- Second item, an unrelated bullet\n")
+        self.assertEqual([(a, b) for a, b, _ in mc.unwrap_blocks(text)], [(1, 2), (3, 3)])
 
     def test_phrases_do_not_join_across_blank_lines(self):
         text = "This mentions if the\n\nnon-negotiable point separately.\n"
@@ -628,6 +676,61 @@ class TestInputStamp(unittest.TestCase):
                 break
             block.append(l)
         self.assertEqual(len(block), 2)
+
+
+class TestSupersededPatterns(unittest.TestCase):
+    """A superset REPLACES the entry it covers, so no line reports twice, and every replaced
+    entry's positive probe still hits its replacement."""
+
+    SUPERSEDED = {
+        r"\bthis role (asks for|needs|runs on|is about)\b": (
+            r"\b(this|your) role\b[^.]{0,10}\b(asks?|needs|runs (on|across)|is (about|close to))",
+            ["the discipline this role runs on", "what this role asks for"]),
+        r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,15}\b(asks?|is asking|needs|wants) for someone": (
+            r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,25}\b(asks?|is asking|needs|wants)\b",
+            ["your ad asks for someone who", "this role needs for someone able to"]),
+        "the closest thing on my record to": (
+            r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b",
+            ["the closest thing on my record to a formal writing sample"]),
+        r"rather say (so|that) (now|plainly)": (
+            r"rather say (so|that|it)? ?(now|plainly)", ["I would rather say so now"]),
+    }
+
+    def test_superseded_entries_are_gone_and_covered(self):
+        cats = mc.load_categories(BANNED)
+        raws = {p.raw.replace("re:", "", 1) for ps in cats.values() for p in ps}
+        for old, (new, positives) in self.SUPERSEDED.items():
+            self.assertNotIn(old, raws, "replaced entry still in the file: %r" % old)
+            self.assertIn(new, raws, "replacement missing: %r" % new)
+            for s in positives:
+                self.assertTrue(re.search(new, s, re.I), "%r no longer hits %r" % (new, s))
+
+
+class TestLetterHeaderWindow(unittest.TestCase):
+    """check_letter_header() reads a fixed head window for `Re:` and `Dear`; a header with
+    separate link lines and a three-line addressee must still fit. It has one line of
+    margin: a five-line addressee pushes `Dear` out of the window."""
+
+    LETTER = ("Jane Candidate\\\n"
+              "Sydney NSW\\\n"
+              "+61 400 000 000 | jane@example.com\\\n"
+              "<https://www.linkedin.com/in/example/>\\\n"
+              "<https://example.com/portfolio>\n"
+              "\n"
+              "Acme Pty Ltd\\\n"
+              "Data & Analytics hiring team\\\n"
+              "Level 3, 1 Example Street, Sydney NSW 2000\n"
+              "\n"
+              "Re: Senior Data Analyst\n"
+              "\n"
+              "Dear Hiring Manager,\n"
+              "\n"
+              "Body.\n\nRegards,\\\nJane Candidate\n")
+
+    def test_header_with_three_line_addressee_passes(self):
+        lines = self.LETTER.splitlines()
+        self.assertEqual(lines[12], "Dear Hiring Manager,", "fixture shape drifted")
+        self.assertEqual(mc.check_letter_header(self.LETTER), [])
 
 
 class TestScriptRuns(unittest.TestCase):

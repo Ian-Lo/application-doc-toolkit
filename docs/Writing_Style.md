@@ -1,4 +1,4 @@
-<!-- source-hash: a0af00cc7a6f docs/Writing_Style.md -->
+<!-- source-hash: c77a185b3019 docs/Writing_Style.md -->
 # Writing style — a voice model, and the LLM tells to avoid
 
 **Read this before drafting or revising any resume, cover letter, or screening-question
@@ -67,7 +67,8 @@ line break — **not** two trailing spaces, not a blank line:
 ```
 Jane Doe\
 Springfield\
-+1 555 0100 | jane@example.com | [LinkedIn](https://www.linkedin.com/in/janedoe/)
++1 555 0100 | jane@example.com\
+<https://www.linkedin.com/in/janedoe/>
 
 <Company or agency>\
 <Hiring team, named manager, or the address the ad gives>
@@ -89,8 +90,26 @@ company line followed by a team line without the `\` renders as one sentence.
 **Losing the `\` on the name/city lines, or after `Regards,`, collapses the block into one
 run-on paragraph when the document renders** — invisible in the markdown source, which is exactly
 why it survives an author's own read-through and needs a mechanical check
-(`mechanical_checks.py`'s `LETTER HEADER BLOCK` section) rather than eyeballing. Resumes use the
-same header line without the hard breaks, since a resume has no valediction.
+(`mechanical_checks.py`'s `LETTER HEADER BLOCK` section) rather than eyeballing. Every header
+line except the last ends in `\`, the link lines included — without it the URLs run together on
+one rendered line. Resumes use the same header lines with the same hard breaks (a resume has no
+valediction, so the header is the only hard-broken block). See "Recoverable links" below for what
+the link lines must look like.
+
+## Recoverable links — the URL is the link text
+
+For a URL that matters — LinkedIn, a published career record, GitHub, a portfolio or publication a
+screener is meant to open — **the link text is the full URL with its scheme, written as a bare
+autolink (`<https://...>`) on its own line, never wrapped.** A printed PDF, an ATS text extract and
+a pasted plain-text copy all keep the text and drop the href, so `[LinkedIn](...)` leaves the
+reader a word with nothing behind it to type.
+
+- **New documents only.** Existing documents are not swept; a live document picks the shape up
+  when it is next touched for another reason, and a submitted one is a frozen record.
+- **One URL per line.** In a hard-broken block (the letter or resume header) each link line ends
+  in `\` like its neighbours, so it renders on its own line rather than joining the next.
+- A `[text](url)` link whose text is not the URL is still fine for incidental references where the
+  URL itself does not need to survive print.
 
 ## The closing line — where a published evidence page is available
 
@@ -301,7 +320,8 @@ application.
 - **Check the ad's own wording before conceding anything.** A *desirable* is not an *essential*.
   A slash ("Power BI/Tableau") is one requirement, not two. "Or similar", "or equivalent
   demonstrated technical capability", "preferably" and "ideally" are escape hatches the
-  advertiser wrote deliberately — use them. One recorded ad prefaced its whole requirements
+  advertiser wrote deliberately — use them. An "or" has as many doors as it lists: do not close
+  one you were not asked about, and never close them all. One recorded ad prefaced its whole requirements
   list with "you will *ideally* bring" and the application conceded against it three times.
 - **Never write a concession in the same pass that discovers the gap.** If the fact library
   is silent on something, that means nobody has asked the candidate, not that they lack it.

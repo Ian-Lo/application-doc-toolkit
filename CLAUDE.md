@@ -1,4 +1,4 @@
-<!-- source-hash: 3cd095650e02 CLAUDE.md -->
+<!-- source-hash: e3c4e8734245 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in
@@ -294,6 +294,21 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
   one line that this happened. The limit that matters most is the reviewer's: **a generic
   review spawn gets no Edit or Write tool**, and the brief says it reports findings and never
   edits — without the registered type, that sentence is the only enforcement there is.
+- **Paste the fact library's page pairs into every drafting and review brief** — the agents read
+  exactly those and ask for them if the brief has none (`.claude/agents/drafting.md`). Compute
+  them fresh before each spawn, never by hand, since the line count is the end-of-file check:
+
+  ```
+  python3 -c "
+  L=open('Fact_Library.md',encoding='utf-8').read().splitlines(True); s=1; c=0; P=[]
+  for i,l in enumerate(L,1):
+      if c+len(l)>50000 and i>s: P.append((s,i-s)); s,c=i,0
+      c+=len(l)
+  P.append((s,len(L)-s+1)); print(len(L),'lines'); print(P)"
+  ```
+
+  It prints the line count and `(offset, limit)` pairs of at most ~50,000 characters each,
+  tiling the file exactly. Paste both lines into the brief. A small library is one pair.
 - **Retire the drafting agent after ONE new application, or at ~200K tokens, whichever comes
   first.** The budget counts **only new applications**, because that is the work where a stale
   instance actually does damage:

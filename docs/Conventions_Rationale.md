@@ -1,4 +1,4 @@
-<!-- source-hash: c37d497faa55 docs/Conventions_Rationale.md -->
+<!-- source-hash: dafc23de84ae docs/Conventions_Rationale.md -->
 # Why the conventions exist
 
 Background for the rules in `CLAUDE.md`. Read this when a rule looks arbitrary or you're
@@ -202,6 +202,18 @@ the count would turn a quality fix into a net loss.
 **This is drafting-only.** The same amortisation on the *review* side carried no measured
 quality cost — the reviewer checks written claims against their licensing sentence, which is a
 lookup, where drafting *selects*, which is a search.
+
+### Free revisions have a clock on them
+
+A later cost measurement added a caveat to "revisions are free", without changing the budget. A
+held drafting instance resumed after more than about five minutes idle re-writes its whole
+transcript prefix to the prompt cache at a premium: on the corpus, 57K-144K tokens after 5-21
+minutes and 160K-180K after 40-50 minutes, and by the time a review round comes back the
+transcript is larger than the fact library itself. The subagent cache lifetime is effectively
+five minutes. **So holding the instance for revisions saves money only when the next round
+reaches it inside five minutes.** That is a cost fact for the orchestrator to weigh, not a budget
+change: revisions stay unbudgeted, and the quality reason for keeping the instance (it holds the
+selection and the rationale for documents it wrote) is unchanged.
 
 ## Why the review agent is not budgeted, and its tallies are
 
@@ -503,3 +515,41 @@ inferred from a fetch error.
 
 This is a different case from a judgment call about fit or strength, which stays a person's
 decision: a dead ad is a checkable fact, not a judgment, so it doesn't need the same referral.
+
+## Fact-library reads are paged by computed pairs and audited from the transcript
+
+Of 21 drafting spawns that attempted a full pass of the fact library in one week, 13 stopped
+short, under briefs that said "in full" and "every line". Five stopped just as the known-gaps
+section began; seven more stopped with the fence section unread. Every one had seen every page
+come back exactly the length it asked for: **a page returning the lines asked is not an
+end-of-file signal, and nothing else told them they were short.** The read tool's token cap
+errors and never truncates, so the cap was not the cause. The cause was paging by a fixed step
+with no line count and no end check, and a rule alone did not fix it, because the thirteen
+already had the rule.
+
+That is a live exposure: a drafter that has not read the boundaries section can ship the claim
+it forbids. So the brief pastes the pages: the orchestrator's script prints the file's current
+line count and `(offset, limit)` pairs computed per file version (sized for the worst observed
+characters-per-token ratio, tiling the file exactly), the agent reads exactly those and reports
+the last line delivered and that the last page held the fence heading, and the orchestrator
+checks that report against the transcript before accepting the unit. Self-report is not
+compliance. The pairs are pasted from the script's output, never typed, because the line count is
+the end-of-file rule's input.
+
+## Fresh reviewers and first drafters carry the library in the agent definition
+
+Reading the library by paged `Read` is most of a review's requests, and each one re-reads a
+growing prefix. Carrying the whole library in a generated sibling of the agent definition cost
+roughly a quarter less than the paged read on a cold spawn, and about two thirds less when the
+next spawn of that type landed inside the five-minute cache window. A lane-scoped extract was the
+other candidate and was abandoned on its own result: a broad ad matched most of the library, so
+the extract came out nearly as large and found less. Two reviews from identical input disagree on
+a few findings, so adoption was scored against a two-run control rather than a single clean run.
+Fresh drafters followed on the same two-run test: no large under-selection, about a quarter
+cheaper cold. The coarse pass cannot show equivalence, only the absence of a large loss.
+
+The carried library is still the whole file, so "read the whole library each time" is unchanged.
+It applies to fresh instances only: a first draft for a new application and a fresh review, never
+a revision spawn (a different job) and never a cross-application sweep. The sibling freezes the
+library at generation, so regenerate it immediately before every spawn rather than trusting a
+staleness warning that only runs at pass boundaries.

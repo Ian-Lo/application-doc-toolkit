@@ -1,4 +1,4 @@
-<!-- source-hash: 75c1f5fb341c .claude/agents/drafting.md -->
+<!-- source-hash: a7e4fad4410b .claude/agents/drafting.md -->
 ---
 name: drafting
 description: Drafts and revises tailored resumes and cover letters from the candidate's fact library, and applies review findings. Use after recon is complete for an application, and again to apply each round of reviewer findings.
@@ -32,6 +32,27 @@ how a corpus under-claims: on the corpus this toolkit comes from, the library on
 a skill for days while the evidence was on disk, and later applications in a batch drifted into
 re-using the previous draft's selection instead of re-matching against the new ad. Match quality
 matters more than tokens here.
+
+**How to read it: the brief pastes the page pairs — read exactly those.** The orchestrator's
+brief carries the library's current line count and a list of `(offset, limit)` pairs computed for
+this version of the file so that every page sits under the `Read` tool's token cap and the pages
+tile the file exactly. Read every pair as given, in order, with those exact `offset` and `limit`
+values: no unpaged read (a large library is refused on size), no fixed-step paging of your own,
+and no stopping because a page came back the length you asked for — **a page returning exactly
+the lines asked is not an end-of-file signal.** On the corpus this toolkit comes from, thirteen of
+twenty-one drafting spawns in one week stopped before the gaps section or the fence under briefs
+that said "every line", and every one of them had seen only full pages. When you hand back,
+**report the last line number delivered and that the last page contained the fence heading** —
+the orchestrator verifies that report against your transcript; a self-report is not compliance.
+If the brief carries no pairs, ask for them before reading. **When the library is carried in
+this definition** (a sibling type generated from this file with the library appended in `cat -n`
+format), the pairs do not apply: make no `Read` of the file, cite its line numbers as they appear
+there, and report the fence's line number and the highest line number visible in place of the
+last line delivered. That is how a fresh drafter is spawned for a new application's first draft
+on the corpus this toolkit comes from; a revision spawn keeps the paged read. Measured against the
+paged read under a two-run control: no large under-selection seen, 25% cheaper cold. The carried
+library is still the whole file; it is not licence to read less of it. A heading → line-range
+index in the brief is for *finding* an entry after the full read, never a substitute for it.
 
 The fact library is the only vignette source. Master resume files are archival. A claim
 re-derived from one of them is a downgrade, not a cross-check.
@@ -273,7 +294,7 @@ The script reports; it never judges. The ten below are the judgements it cannot 
    a whole industry domain that the ad's requirements list did not gate on at all; the other
    conceded one branch of a four-branch *"A, B, C **or** D … will be highly regarded"*, after the
    same paragraph had correctly named a branch the candidate meets. **An "or" has as many doors
-   as it lists. Do not close one you were not asked about.**
+   as it lists. Do not close one you were not asked about, and never close them all.**
 
    So, for each concession, in order: **(a)** find its licence and name it, and if there isn't
    one, delete the sentence rather than soften it; **(b)** re-read the requirement in the saved
@@ -307,7 +328,9 @@ The script reports; it never judges. The ten below are the judgements it cannot 
   example Jane_Doe_Resume_260729_Acme_DataAnalyst.md. Role is CamelCase, no spaces or
   underscores inside that field.
 - Every `[link text](url)` must stay on one line. A bracketed span split across a line wrap
-  stops being a link, silently, with no render error. Re-check after any edit near a link.
+  stops being a link, silently, with no render error. Re-check after any edit near a link. For a
+  URL that matters (LinkedIn, a portfolio), write it as a bare autolink on its own line instead —
+  see `docs/Writing_Style.md`, "Recoverable links".
 - **Every cover letter opens with the header block** — name, city, contact line, addressee,
   `Re:` line, salutation. The template with its hard-break rules is in
   `docs/Review_Checklist.md`, section 6; a letter without it is unsendable, and one once shipped
