@@ -1,4 +1,4 @@
-<!-- source-hash: dafc23de84ae docs/Conventions_Rationale.md -->
+<!-- source-hash: 2bee75a1949f docs/Conventions_Rationale.md -->
 # Why the conventions exist
 
 Background for the rules in `CLAUDE.md`. Read this when a rule looks arbitrary or you're
@@ -412,8 +412,9 @@ README said nothing about updates, so a published change would never have reache
 The route that works needs no shared history: fetch the public `main`, then write its versions
 of the toolkit's own files over the copy's, by explicit file list (`git restore
 --source=FETCH_HEAD`). That is safe only because of an invariant the rest of the toolkit has to
-keep: **personal data lives only at the root (`Fact_Library.md`, `Open_Questions.md`) and under
-`Applications/` and `sources/`; toolkit files live only under the replaced paths** (`CLAUDE.md`,
+keep: **personal data lives only at the root (`Fact_Library.md`, `Open_Questions.md`,
+`Local_Rules.md`, `Applications.base`) and under `Applications/` and `sources/`; toolkit files
+live only under the replaced paths** (`CLAUDE.md`,
 `README.md`, `LICENSE`, `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates). The
 two lists are code in `scripts/update_toolkit.py`, with a test that holds them disjoint, so a
 guide change that put user data under `docs/` would fail a test rather than be overwritten one
@@ -425,10 +426,12 @@ Three consequences were decided rather than left to happen:
   the source lacks — which would take a user's note committed under `docs/` along with a
   renamed checklist. The script therefore names files, never directories, and reports what it
   left behind. A stale toolkit file lingering is the smaller harm.
-- **User edits to toolkit files are overwritten, and the guide says so.** The user is not meant
-  to edit them; a three-way merge to preserve edits would need a base the copy does not have,
-  and the edit survives in git history. The script refuses while such an edit is uncommitted, so
-  an overwrite is never of work the user has not yet saved.
+- **An edit to a toolkit file is named and refused, not merged and not silently reverted.** The
+  user is not meant to edit toolkit files; their own rules go in `Local_Rules.md`, which the
+  update never touches. A three-way merge would need a base the copy does not have, so the
+  edit is detected against the toolkit's published history instead and refused. The script
+  refuses while an edit is uncommitted, and refuses a committed edit by name (the next entry), so
+  an overwrite is never of work the user has not yet saved or knowingly committed.
 - **The shipped suites run after every update, and a failure rolls the update back.** A broken
   publish then costs the user one message instead of a broken toolkit.
 
@@ -437,10 +440,34 @@ per publish, newest first, and the update prints the lines the copy did not have
 needs a matching edit to the user's fact library carries `LIBRARY EDIT:` so the orchestrator
 proposes it, rather than the user discovering it from a lint failure.
 
-## The cloud session pushes to its own branch, and may not register the agent types
+## Local rules live in one personal file, and a committed edit is named before it is reverted
+
+A user who wants the toolkit to adapt to their field, or to avoid words they dislike, used to
+have one option: edit a toolkit file, and have the next update overwrite it. The copy now holds
+one personal file, `Local_Rules.md`, with four sections (`## Voice`, `## Drafting`, `## Review`,
+`## Recon`), made on request from `docs/Local_Rules_TEMPLATE.md`. Each role reads its own section
+after its own rules, if the file exists. **The local file wins on voice and on role behaviour. It
+never overrides the fence and licensing rules, verbatim capture, findings-never-edits, or the
+lint**: those are the rules a beginner's edit could otherwise switch off without seeing it.
+
+The file is a personal path, so the update never reads or writes it, and its template sits under
+`docs/`, a path every copy's update already delivers. A committed edit to a toolkit file is
+named and refused with exit 2, with where the change belongs instead: `.gitignore` edits go in
+`.git/info/exclude`, `.claude/settings.json` edits in `.claude/settings.local.json`, anything
+else in `Local_Rules.md`. A file counts as edited when its blob in the copy is not one the
+toolkit ever published at that path, so an older published version is replaced as usual.
+
+**The toolkit's `main` is never rewritten after a push**, because the check reads that history.
+A rewrite drops published blobs, and every copy that had updated would refuse, naming edits
+nobody made. A mistake is fixed by a new commit on top. Because the agent can run the update
+with any arguments, `--force` is run only on the user's explicit yes, after the files and where
+each change belongs have been shown.
+
+## The cloud session pushes to its own branch; the agent types did not register, and why
 
 Both found on 2026-09-04 by the first reader's-seat smoke test on claude.ai/code, against a
-private copy made from the template; both are properties of that environment, not of the guide.
+private copy made from the template. The branch is a property of that environment. The missing
+agent types were not: the toolkit's own agent files caused them, and that was fixed on 2026-10-07.
 
 **"Commit and push" lands on a `claude/<slug>-<six chars>` branch, never on `main`.** The
 session is pinned to that branch for its whole life and says so unprompted when it pushes. The
@@ -451,16 +478,23 @@ clicks that follow — **Create PR** on the session's bar, then **Merge pull req
 terminal session with no pinned branch. The guide quotes the button names because a merge is
 two clicks, not one, and a reader who stops after the first has nothing on `main`.
 
-**The agent types in `.claude/agents/` did not register.** The session's spawn failed with
+**The agent types in `.claude/agents/` did not register, and the cause was the agent files
+themselves.** The session's spawn failed with
 *Agent type 'recon' not found*, and it recovered on its own: it spawned generically, carried the
 model and the file pointers in the brief, and the three roles ran and handed over correctly
 (recon, drafting, review, each starting without a prompt). What is lost is structural, not
 functional: the reviewer's `tools: Read` allowlist is the toolkit's enforcement of
 *findings-never-edits*, and a generic spawn enforces it only by the tool list the orchestrator
 chooses and the sentence in the brief. The spawn-specs rule therefore names that case and what
-to carry, and the guide tells the reader the message is harmless. Whether the non-registration
-is a provisioning quirk or the cloud session's steady state is unknown; the rule assumes it can
-happen.
+to carry, and the guide tells the reader the message is harmless. The cause was found on 2026-10-07:
+every agent file opened with a `<!-- source-hash: ... -->` comment on line 1, ahead of the `---` that
+opens its frontmatter, and an agent file whose first line is not `---` does not register. A probe
+on Claude Code 2.1.292 listed only the file without the comment, and listed both once the comment
+sat below the closing `---`. The comment now follows the closing `---`, which the staleness check
+still reads because it searches the first 4096 bytes. The cloud-session run was never repeated, so
+the probe shows the comment is enough to stop registration, not that it caused that specific
+failure. The spawn-specs rule keeps its fallback anyway, because a session can still fail to load
+agents for other reasons.
 
 A smaller finding from the same run, recorded so the trap is known: an agent's scratch script
 asserted that no `REPLACE` marker survived in the written library and tripped on the template's

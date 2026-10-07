@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 4ee599cdc46d scripts/test_new_application.py
+# source-hash: 408e1bad773b scripts/test_new_application.py
 """Tests for scripts/new_application.py.
 
 Stdlib unittest, no network, and every test writes into a `tempfile` tree - never the real
@@ -204,6 +204,14 @@ class TestScaffold(TreeCase):
         self.make()
         body = self.read("2026-03-02_Acme_DutyManager", "status.md")
         self.assertTrue(re.search(r"^-? *\*\*Status[:*]|^- *Status:", body, re.M))
+
+    def test_status_seed_opens_with_the_stage_frontmatter_block(self):
+        """The base view groups on this block; it must be the first three lines, above the H1."""
+        self.make()
+        body = self.read("2026-03-02_Acme_DutyManager", "status.md")
+        self.assertEqual(body.splitlines()[:3], ["---", "stage: scaffolded", "---"])
+        self.assertTrue(body.splitlines()[3].startswith("# Application Status"))
+        self.assertNotIn("<!-- meta", body)
 
     def test_status_seed_is_short(self):
         """A seed must leave room to write; a status file is not a changelog."""

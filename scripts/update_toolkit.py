@@ -14,15 +14,23 @@ fetched versions, wholesale, then runs the shipped test suites and reports what 
 The path split is the whole design, and it lives here as code rather than in prose so that
 a test can hold it:
 
-    TOOLKIT_PATHS   replaced on every update. The user is not meant to edit these; an edit
-                    they made is overwritten (it stays in git history, it is not gone).
+    TOOLKIT_PATHS   replaced on every update. The user is not meant to edit these. Rules of
+                    their own go in Local_Rules.md, a personal path. An uncommitted edit
+                    is refused; a committed edit is named and refused (see below) rather
+                    than silently reverted.
     PERSONAL_PATHS  never read, never written: the fact library, the open questions, the
-                    applications and the source documents.
+                    local rules, the applications (and Applications.base) and the source
+                    documents.
 
 Only files that the fetched tree contains are written. A file tracked in the copy under a
 toolkit path but absent upstream is left where it is and named in the report - the update
 never deletes anything, even a stale toolkit file, because a user file committed in the
 wrong place would be indistinguishable from one. Nothing outside the two lists is touched.
+
+A committed edit to a toolkit file is detected against the toolkit's own published history:
+a file in the copy is a local edit when its HEAD blob is not one the toolkit ever published
+at that path. The update names such files, says where each change belongs instead, and
+exits 2. This relies on the toolkit never rewriting a pushed commit. --force overrides it.
 
 Why replace-from-FETCH_HEAD rather than merge: the two repositories share no commit, so a
 merge or rebase has nothing to work from; `git restore --source=FETCH_HEAD` needs only the
@@ -34,9 +42,10 @@ token `LIBRARY EDIT:` describes a change the user's own `Fact_Library.md` needs 
 example a header the lint now reads); the orchestrator proposes that edit and never makes
 it silently.
 
-Exit codes: 0 updated, or already current; 2 not inside a git repository, or uncommitted
-changes under a toolkit path (commit them, or pass --force to overwrite them); 3 the fetch
-failed; 4 a shipped test suite failed after the update, and the toolkit files were put back.
+Exit codes: 0 updated, or already current; 2 not inside a git repository, uncommitted
+changes under a toolkit path (commit them, or pass --force to overwrite them), or a committed
+local edit to a toolkit file (move it where the message says, or pass --force to overwrite
+it); 3 the fetch failed; 4 a shipped test suite failed after the update, and the toolkit files were put back.
 """
 from __future__ import annotations
 
@@ -64,9 +73,20 @@ TOOLKIT_PATHS = (
 PERSONAL_PATHS = (
     "Fact_Library.md",
     "Open_Questions.md",
+    "Local_Rules.md",
     "Applications",
+    "Applications.base",
     "sources",
 )
+
+# Where a local edit to a toolkit file belongs instead, for the two paths that are not rule
+# files. Anything else belongs in Local_Rules.md.
+EDIT_HOMES = {
+    ".gitignore": ".git/info/exclude (git reads it; the update never touches it)",
+    ".claude/settings.json": ".claude/settings.local.json (never committed, so the update "
+                             "leaves it alone)",
+}
+LOCAL_RULES_HOME = "Local_Rules.md (a personal file the update never touches)"
 
 WHAT_CHANGED_HEADING = "## What changed"
 LIBRARY_EDIT_TOKEN = "LIBRARY EDIT:"
@@ -105,6 +125,46 @@ def dirty_toolkit_files(root: str) -> list:
         return []
     cp = git(root, "status", "--porcelain", "--untracked-files=no", "--", *paths)
     return sorted(line[3:] for line in cp.stdout.splitlines() if line.strip())
+
+
+def blobs_at(root: str, rev: str, paths) -> dict:
+    """{path: blob id} for the files of `paths` in `rev`."""
+    cp = git(root, "-c", "core.quotepath=off", "ls-tree", "-r", rev)
+    out = {}
+    for line in cp.stdout.splitlines():
+        meta, _, path = line.partition("\t")
+        if path in paths:
+            out[path] = meta.split()[2]
+    return out
+
+
+def published_blobs(root: str) -> set:
+    """{(path, blob id)} for every version any toolkit path has had in FETCH_HEAD's history.
+    --root is explicit because the root commit's files otherwise appear only through the
+    user's log.showRoot setting; --no-renames keeps one path per line."""
+    cp = git(root, "-c", "core.quotepath=off", "log", "--root", "--format=", "--raw",
+             "--no-abbrev", "--no-renames", "FETCH_HEAD", "--", *TOOLKIT_PATHS)
+    seen = set()
+    for line in cp.stdout.splitlines():
+        meta, _, path = line.partition("\t")
+        fields = meta.split()
+        if len(fields) >= 5 and path:
+            seen.add((path, fields[3]))
+    return seen
+
+
+def local_edits(root: str, incoming: list) -> list:
+    """Incoming paths whose HEAD blob differs from FETCH_HEAD's and is not a version the
+    toolkit ever published at that path: an edit the update would revert. A path absent
+    from HEAD is new and is not checked."""
+    wanted = set(incoming)
+    head = blobs_at(root, "HEAD", wanted)
+    fetched = blobs_at(root, "FETCH_HEAD", wanted)
+    suspect = [p for p in incoming if p in head and head[p] != fetched.get(p)]
+    if not suspect:
+        return []
+    seen = published_blobs(root)
+    return [p for p in suspect if (p, head[p]) not in seen]
 
 
 def what_changed_entries(text: str) -> list:
@@ -191,6 +251,15 @@ def update(root: str, source: str = SOURCE_URL, branch: str = SOURCE_BRANCH,
         say("Already up to date with %s at %s." % (source, fetched))
         return 0
 
+    edited = [] if force else local_edits(root, incoming)
+    if edited:
+        say("Committed edits under toolkit paths that this update would revert:")
+        for p in edited:
+            say("    %s -> keep the change in %s" % (p, EDIT_HOMES.get(p, LOCAL_RULES_HOME)))
+        say("If you did not edit these files, the toolkit's history may have been rewritten. "
+            "Ask the user before re-running with --force.")
+        return 2
+
     say("%s %s at %s" % ("Would update from" if dry_run else "Updating from", source, fetched))
     say("Toolkit files that change:")
     say(diff)
@@ -228,7 +297,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--dry-run", action="store_true", help="fetch and report; write nothing")
     ap.add_argument("--force", action="store_true",
-                    help="overwrite uncommitted edits under toolkit paths")
+                    help="overwrite uncommitted edits and committed local edits under "
+                         "toolkit paths")
     ap.add_argument("--source", default=SOURCE_URL, help="repository URL (default: the toolkit)")
     ap.add_argument("--branch", default=SOURCE_BRANCH)
     args = ap.parse_args(argv)

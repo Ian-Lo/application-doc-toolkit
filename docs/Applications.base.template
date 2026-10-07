@@ -1,0 +1,35 @@
+# source-hash: original
+# Applications view for Obsidian (Bases). Optional: the toolkit works without it.
+# Copy this file to Applications.base at the repository root (asking Claude to "set up
+# the applications view" does this for you). Obsidian writes view changes into
+# Applications.base, which is yours; the update never touches it.
+# It reads the `stage:` line at the top of each application's status.md.
+filters:
+  and:
+    - file.inFolder("Applications")
+    - file.name == "status.md"
+formulas:
+  name: file.folder.split("/")[1]
+properties:
+  formula.name:
+    displayName: name
+views:
+  - type: table
+    name: By stage
+    groupBy:
+      property: stage
+      direction: ASC
+    order:
+      - formula.name
+      - stage
+    sort:
+      - property: file.folder
+        direction: ASC
+  - type: table
+    name: All
+    order:
+      - formula.name
+      - stage
+    sort:
+      - property: file.folder
+        direction: ASC

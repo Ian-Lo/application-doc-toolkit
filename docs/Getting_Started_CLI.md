@@ -14,15 +14,13 @@ this route does not have:
 - Every save has to go through a pull request: the browser session works on a branch of its
   own and cannot write to your main branch, so each "commit and push" is followed by three
   clicks on two websites.
-- The three role definitions the toolkit ships did not register in the browser session, so
-  the roles ran from instructions carried in prose instead.
 - Your files live on a cloud computer. Old resumes go in through GitHub's upload page, and
   finished documents come out through GitHub's download button, one file at a time.
 - The last step, turning a document into PDF or Word through Google Docs, could not be tested
   from the browser session at all.
 
-The CLI has none of these: it writes to your main branch, the roles load from
-`.claude/agents/` as designed, your files are ordinary files on your own disk, and the whole
+The CLI has none of these: it writes to your main branch, your files are ordinary files on
+your own disk, and the whole
 method was built and is run daily this way, so its behaviour is the best understood. Use the
 browser route only if a Chromebook is the only computer you have.
 
@@ -203,7 +201,7 @@ session, one at a time:
 
 1. **"Set up my fact library from the template."** Claude copies the two templates into
    `Fact_Library.md` and `Open_Questions.md`, and asks you for your identity block: your name
-   as it should appear on a cover letter, your contact line, and the short form of your name
+   as it should appear on a cover letter, your contact lines, and the short form of your name
    used in filenames (for example `Sam_Okafor`). Answer in the chat. It writes them in.
 2. **Feed in your history.** Either:
    - open an old resume, copy all of its text, paste it into the chat, and type
@@ -236,8 +234,8 @@ author, so there is no pull request and nothing to click on github.com.
    the words it needs.
 3. **"Research the company, then draft the resume and cover letter, then review them."**
    Three roles run in turn — a researcher, a writer, and a reviewer who can read but never
-   edit. Their definitions load from `.claude/agents/`, and in a terminal session they do
-   register, so Claude names them as it hands over. Expect questions back, usually about a
+   edit. Their definitions load from `.claude/agents/` as registered agent types, so Claude names
+   them as it hands over. Expect questions back, usually about a
    claim that needs bounding. Answer them.
 4. **"Run the checks."** A mechanical lint reads the drafts and reports anything that needs
    attention: a missing header line, a phrase from the ad that your fact library never
@@ -257,8 +255,14 @@ git add … && git commit … && git push
 
 `CLAUDE.md` holds the rules that map your sentences to these commands, and `.claude/agents/`
 holds the three role definitions with their tool limits. You can read both; you are not meant
-to edit them, because section 9 replaces them.
+to edit them: put your own rules in `Local_Rules.md` instead (ask Claude to "set up my local
+rules"), because section 9 names and refuses an edit to a toolkit file rather than silently
+reverting it.
 </details>
+
+Optional: if you use Obsidian, say "set up the applications view" and Claude copies a table
+definition to `Applications.base`, which shows every application grouped by its stage. The
+toolkit works without it.
 
 ## 8. Turn the documents into PDF or Word
 
@@ -292,12 +296,15 @@ your copy was last updated. Then say **"commit and push"** as usual.
 
 Three things to know:
 
-- **Your own files are never touched:** `Fact_Library.md`, `Open_Questions.md`, everything
-  under `Applications/` and everything under `sources/`.
-- **Toolkit files are replaced whole.** You are not meant to edit them; if you did, the edit
-  is overwritten (it stays in your repository's history, so nothing is lost for good). If
-  Claude says it refused because a toolkit file has uncommitted changes, say "commit and push"
-  first, then ask again.
+- **Your own files are never touched:** `Fact_Library.md`, `Open_Questions.md`,
+  `Local_Rules.md`, `Applications.base`, everything under `Applications/` and everything
+  under `sources/`.
+- **Toolkit files are replaced whole, and your own rules go in `Local_Rules.md`.** You are not
+  meant to edit toolkit files. If Claude says it refused because a toolkit file has uncommitted
+  changes, say "commit and push" first, then ask again. If it refuses naming files you
+  committed edits to, it says where each change belongs instead; Claude shows you the files and
+  runs the update over them only on your explicit yes, and your edit stays in the repository's
+  history either way.
 - **Occasionally a change needs a matching edit to your fact library** — a new line the checks
   read, say. The update names it, and Claude proposes the edit and waits for your yes.
 

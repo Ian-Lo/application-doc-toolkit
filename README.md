@@ -22,6 +22,7 @@ file everything is built from.
 <!-- One line per publish, newest first, dated. `scripts/update_toolkit.py` prints the lines a
      private copy did not have. A line that needs a matching edit to the user's Fact_Library.md
      carries `LIBRARY EDIT:` followed by the edit. -->
+- 2026-10-07 — The three roles now load as registered agent types: each `.claude/agents/` file opened with a comment above its frontmatter, which stopped it registering. Your own rules now go in `Local_Rules.md` (say *"set up my local rules"*; template `docs/Local_Rules_TEMPLATE.md`), which the update never touches, and from the next update on a committed edit to a toolkit file is named and refused instead of silently reverted. **This update still runs your copy's older script, so a committed edit to a toolkit file is reverted by it: before *commit and push*, recover the edit with `git show HEAD:<path>` and move it into `Local_Rules.md`.** New `status.md` files open with a `stage:` frontmatter block (`scaffolded`, `drafted`, `ready`, `submitted`, `skipped`; say *"mark <application> submitted"*); older status files have none, so add the three-line `---` / `stage: <value>` / `---` block by hand above the heading of any you want grouped. Optional Obsidian table of your applications by stage (say *"set up the applications view"*; template `docs/Applications.base.template`). `scripts/run_all_tests.py` runs every shipped test suite. LIBRARY EDIT: in Fact_Library.md's Identity block, put the city, the phone and email, and the LinkedIn URL each on its own line, every line but the last ending in a backslash, and the URL inside angle brackets.
 - 2026-10-06 — Re-derived from the private source (this line also covers the unannounced 2026-09-16 publish): `mechanical_checks.py` prints each summary sentence, Core Skills entry and letter topic sentence beside the bullet it compresses (`BODY vs COMPRESSION`, `docs/Review_Checklist.md` 7b), and no longer misses a phrase wrapped onto a " - " aside; four self-grading/closest-thing patterns widened and two added; `docs/Writing_Style.md` gains "Recoverable links" (a URL that matters is a bare autolink on its own line) and a new letter-header template; an "or" rule: never close every door it lists; the drafting and review agents read the fact library in page pairs the orchestrator computes with a one-liner in `CLAUDE.md` (*Spawn specs*).
 - 2026-09-04 — `docs/Getting_Started_CLI.md`: the preferred route, installing Claude Code on your own computer (macOS, Windows through WSL, Ubuntu/Debian) with push straight to `main` and no pull request; the browser guide is now the Chromebook alternative and says so under its title.
 - 2026-09-04 — First full reader's-seat smoke test applied: *commit and push* in a claude.ai/code session lands on a `claude/…` branch, so `docs/Getting_Started.md` §5.5 and the `CLAUDE.md` row now give the Create PR → Merge pull request → Confirm merge clicks; the spawn specs cover a session where the `.claude/agents/` types do not register; §3 *press Start* corrected to Enter; the fact-library template's comment no longer spells the REPLACE marker; `docs/Writing_Style.md` shows the addressee as a hard-broken block and puts the name line first.
@@ -40,6 +41,8 @@ file everything is built from.
 | `docs/Fact_Library_Guide.md` | How to build the fact library by conversation: what an entry is, where facts come from, the fence, the editing rules |
 | `Fact_Library_TEMPLATE.md` | The library's skeleton, with `>>> REPLACE` markers; the worked example is in the guide, not the template |
 | `Open_Questions_TEMPLATE.md` | The one file where unconfirmed facts wait |
+| `docs/Local_Rules_TEMPLATE.md` | Copied to `Local_Rules.md` on request: your own rules on voice and on how each role works, which the update never touches and which never override the fence, verbatim capture, findings-never-edits or the lint |
+| `docs/Applications.base.template` | Optional: copied to `Applications.base` on request, an Obsidian table of your applications grouped by stage |
 | `docs/Writing_Style.md` | A voice model built from the candidate's own writing, plus the LLM tells to avoid and the hard rules for handling gaps |
 | `docs/Review_Checklist.md` | The reviewer's mechanical controls, including the subtractive accretion diff |
 | `docs/Recon_Checklist.md` | Company research: topic list, source rules, reuse rules |
@@ -48,6 +51,8 @@ file everything is built from.
 | `scripts/test_new_application.py` | Its test suite |
 | `scripts/update_toolkit.py` | Brings a private copy's toolkit files up to date from this repository — explicit path list, never touches personal files, runs the shipped suites and rolls back if one fails |
 | `scripts/test_update_toolkit.py` | Its test suite, including the toolkit/personal path split |
+| `scripts/run_all_tests.py` | Runs every shipped test suite; exits non-zero on a failure, or on a script with no suite |
+| `scripts/test_run_all_tests.py` | Its test suite |
 | `scripts/mechanical_checks.py` | One-command document lint: banned strings, header block, link atomicity, duration phrases beside their canonical spans, section headers beside their bodies, summary and topic sentences beside the bullet they compress, and — given `--facts` — the ad vocabulary your fact library does not license |
 | `scripts/banned_patterns.txt` | The pattern file, with per-pattern rationale in its comments |
 | `scripts/ad_vocab_stoplist.txt` | The ad-vocabulary check's noise floor: function words and role-generic phrases whose adoption carries no claim |
@@ -78,7 +83,7 @@ agent definitions and `CLAUDE.md` load automatically), but the scripts stand alo
 ```
 python3 scripts/new_application.py --candidate Sam_Okafor --company Northwind --role OperationsCoordinator
 python3 scripts/mechanical_checks.py Applications/<folder> --facts Fact_Library.md
-python3 scripts/test_mechanical_checks.py && python3 scripts/test_new_application.py && python3 scripts/test_update_toolkit.py
+python3 scripts/run_all_tests.py
 python3 scripts/update_toolkit.py --dry-run
 ```
 
@@ -92,7 +97,8 @@ achievement entries, tagged for matching against job-ad requirements, started fr
 `Fact_Library_TEMPLATE.md`. The drafting rules in `.claude/agents/drafting.md` and `CLAUDE.md`
 describe its contract: fact-checked entries only, unconfirmed material lives in
 `Open_Questions.md`, and facts flow into the library the moment they are confirmed. Both files,
-and any `sources/` folder of old documents, are personal data: keep the repository private.
+`Local_Rules.md` if you make one, and any `sources/` folder of old documents, are personal
+data: keep the repository private.
 
 ## Licence
 

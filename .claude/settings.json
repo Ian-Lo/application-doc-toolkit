@@ -11,6 +11,8 @@
       "Bash(python3 scripts/update_toolkit.py)",
       "Bash(python3 scripts/update_toolkit.py:*)",
       "Bash(python3 scripts/test_update_toolkit.py)",
+      "Bash(python3 scripts/run_all_tests.py)",
+      "Bash(python3 scripts/test_run_all_tests.py)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git status:*)",

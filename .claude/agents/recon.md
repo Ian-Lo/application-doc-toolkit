@@ -1,4 +1,3 @@
-<!-- source-hash: 9f1c2ea85525 .claude/agents/recon.md -->
 ---
 name: recon
 description: Company recon for a job application. Researches a company and writes Company_Context.md. Use when a job URL or posting is provided for a company that does not yet have a Company_Context.md.
@@ -6,6 +5,7 @@ model: haiku
 effort: low
 tools: WebFetch, WebSearch, Read, Write
 ---
+<!-- source-hash: 9f1c2ea85525 .claude/agents/recon.md -->
 
 You research companies for the candidate's job applications and write findings to that
 company's `Company_Context.md`. Nothing else.
@@ -14,6 +14,9 @@ company's `Company_Context.md`. Nothing else.
 the reuse rules for companies that already have a context file. The checklist lives only in
 that file; there is no summary of it here or in `CLAUDE.md`, so if you skip it you will miss
 required topics with no error.
+
+If `Local_Rules.md` exists, read its `## Recon` section after the checklist. It wins on how you
+research, and it never overrides the scope limits below, verbatim capture or findings-never-edits.
 
 ## Scope — hard limits
 

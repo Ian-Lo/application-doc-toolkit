@@ -108,7 +108,8 @@ class TestPathSplit(unittest.TestCase):
 
     def test_files_beneath_personal_dirs_are_not_toolkit(self):
         for p in ("Applications/2026-01-02_Co_Role/status.md", "sources/resume.pdf",
-                  "Fact_Library.md", "Open_Questions.md"):
+                  "Fact_Library.md", "Open_Questions.md", "Local_Rules.md",
+                  "Applications.base"):
             self.assertFalse(u.under(p, u.TOOLKIT_PATHS), p)
 
     def test_files_beneath_toolkit_dirs_are_toolkit(self):
@@ -239,6 +240,95 @@ class TwoRepos(unittest.TestCase):
         rc, out = self.run_update(force=True)
         self.assertEqual(rc, 0, out)
         self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "checklist v2\n")
+
+    # --- the local-edit check: a committed edit to a toolkit file is named before the
+    # update reverts it ---------------------------------------------------------------
+
+    def commit_copy_edit(self, rel, text):
+        write(self.copy, rel, text)
+        commit_all(self.copy, "local edit of %s" % rel)
+
+    def test_committed_edit_is_named_and_refused(self):
+        self.publish_v2()
+        self.commit_copy_edit("docs/Review_Checklist.md", "my committed edit\n")
+        rc, out = self.run_update()
+        self.assertEqual(rc, 2, out)
+        self.assertIn("Committed edits", out)
+        self.assertIn("docs/Review_Checklist.md", out)
+        self.assertIn("history may have been rewritten", out)
+        self.assertIn("Ask the user before re-running with --force", out)
+        self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "my committed edit\n")
+        self.assertEqual(sh(self.copy, "status", "--porcelain"), "")
+        self.assert_personal_untouched()
+
+    def test_force_overrides_a_committed_edit(self):
+        self.publish_v2()
+        self.commit_copy_edit("docs/Review_Checklist.md", "my committed edit\n")
+        rc, out = self.run_update(force=True)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "checklist v2\n")
+
+    def test_unedited_file_is_replaced(self):
+        self.publish_v2()
+        rc, out = self.run_update()
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("Committed edits", out)
+        self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "checklist v2\n")
+
+    def test_a_file_at_an_older_published_version_is_not_an_edit(self):
+        self.publish_v2()
+        write(self.up, "docs/Review_Checklist.md", "checklist v3\n")
+        commit_all(self.up, "v3")
+        # The copy still holds v1, two publishes behind; v1 is in the toolkit's history.
+        rc, out = self.run_update()
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "checklist v3\n")
+
+    def test_a_version_only_in_the_root_commit_is_protected(self):
+        # The copy holds v1, which only the toolkit's root commit published. The user's
+        # git config can hide root-commit files from `git log` (log.showRoot=false); the
+        # check must not depend on it.
+        sh(self.copy, "config", "log.showRoot", "false")
+        self.publish_v2()
+        sh(self.copy, "fetch", "--quiet", self.up, "main")
+        listed = sh(self.copy, "log", "--format=", "--raw", "--no-abbrev", "FETCH_HEAD",
+                    "--", "docs/Review_Checklist.md")
+        self.assertEqual(len(listed.splitlines()), 1)  # positive control: v2 only
+        rc, out = self.run_update()
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "checklist v2\n")
+
+    def test_dry_run_reports_a_committed_edit_and_writes_nothing(self):
+        self.publish_v2()
+        self.commit_copy_edit("docs/Review_Checklist.md", "my committed edit\n")
+        rc, out = self.run_update(dry_run=True)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("docs/Review_Checklist.md", out)
+        self.assertEqual(read(self.copy, "docs/Review_Checklist.md"), "my committed edit\n")
+        self.assertFalse(os.path.exists(os.path.join(self.copy, "scripts/update_toolkit.py")))
+        self.assertEqual(sh(self.copy, "status", "--porcelain"), "")
+
+    def test_the_refusal_says_where_each_kind_of_edit_belongs(self):
+        for rel in (".gitignore", ".claude/settings.json"):
+            write(self.up, rel, "published 1\n")
+            write(self.copy, rel, "published 1\n")
+        commit_all(self.up, "ignore and settings")
+        commit_all(self.copy, "same, from template")
+        self.publish_v2()
+        for rel in (".gitignore", ".claude/settings.json"):
+            write(self.up, rel, "published 2\n")
+        commit_all(self.up, "v3")
+        self.commit_copy_edit(".gitignore", "mine\n")
+        self.commit_copy_edit(".claude/settings.json", "mine\n")
+        self.commit_copy_edit("docs/Review_Checklist.md", "mine\n")
+        rc, out = self.run_update()
+        self.assertEqual(rc, 2, out)
+        lines = {l.split(" -> ")[0].strip(): l for l in out.splitlines() if " -> " in l}
+        self.assertIn(".git/info/exclude", lines[".gitignore"])
+        self.assertNotIn("Local_Rules.md", lines[".gitignore"])
+        self.assertIn(".claude/settings.local.json", lines[".claude/settings.json"])
+        self.assertNotIn("Local_Rules.md", lines[".claude/settings.json"])
+        self.assertIn("Local_Rules.md", lines["docs/Review_Checklist.md"])
 
     def test_uncommitted_personal_edit_does_not_block(self):
         self.publish_v2()

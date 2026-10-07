@@ -8,7 +8,10 @@ Read order, if you are new to the toolkit:
    Chromebook: tested, with the limitations the CLI guide lists.
 2. **`Fact_Library_Guide.md`** — the file every document is built from: what an entry is,
    where facts come from, the fence, and how to build it by conversation. The templates it
-   refers to are `../Fact_Library_TEMPLATE.md` and `../Open_Questions_TEMPLATE.md`.
+   refers to are `../Fact_Library_TEMPLATE.md` and `../Open_Questions_TEMPLATE.md`. Two more
+   templates sit in this folder: `Local_Rules_TEMPLATE.md` (your own rules, copied to
+   `../Local_Rules.md` on request) and `Applications.base.template` (an optional Obsidian
+   view, copied to `../Applications.base` on request).
 3. **`../CLAUDE.md`** — the orchestrator's rulebook. Everything else hangs off it.
 4. **`Conventions_Rationale.md`** — why each rule exists: the incident that produced it, on
    the real corpus this toolkit was extracted from. Read an entry when a rule looks arbitrary.

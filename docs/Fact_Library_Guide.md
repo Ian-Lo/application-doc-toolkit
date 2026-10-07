@@ -54,7 +54,9 @@ Hotels and Cove Street Bistro are all invented.**
 ## Identity
 
 Sam Okafor\
-Newcastle NSW · +61 400 000 000 · sam.okafor@example.com · linkedin.com/in/sam-okafor-example
+Newcastle NSW\
++61 400 000 000 | sam.okafor@example.com\
+<https://www.linkedin.com/in/sam-okafor-example/>
 
 Name for filenames: Sam_Okafor
 
@@ -102,8 +104,9 @@ Name for filenames: Sam_Okafor
 
 Four entry shapes are in there: an achievement with numbers, a responsibility with a scale, a
 bounded claim carrying its confirmation line, and a process fact. The identity block is in the
-exact layout the cover-letter header uses — the name line ends with a backslash, and the
-contact line carries the email address — because the lint checks for both.
+exact layout the cover-letter header uses — one item per line, every line but the last ending
+in a backslash, the URL alone on the last line inside angle brackets, and the contact lines
+carrying the email address — because the lint checks for the backslash and the email.
 
 ## 2. Where the facts come from
 

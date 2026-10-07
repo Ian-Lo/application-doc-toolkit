@@ -27,12 +27,16 @@ checkable.
 
 ## Identity
 
-<!-- This block is copied into every cover letter's header, in exactly this layout: the name
-     line ends with a backslash (a hard line break), and the contact line carries the email
-     address. The lint checks for both. -->
+<!-- This block is copied into every cover letter's header, in exactly this layout: one item
+     per line, every line but the last ending in a backslash (a hard line break), the URL alone
+     on the last line inside angle brackets so it stays a link. The contact lines carry the
+     email address; the lint checks for it and for the backslash. See "Recoverable links" in
+     docs/Writing_Style.md. -->
 
 >>> REPLACE: Your Full Name\
->>> REPLACE: City, State/Region · +00 000 000 000 · you@example.com · linkedin.com/in/you
+>>> REPLACE: City, State/Region\
+>>> REPLACE: +00 000 000 000 | you@example.com\
+>>> REPLACE: <https://www.linkedin.com/in/you/>
 
 <!-- The next line is read by the agent to name your documents. Letters and digits, one
      underscore between the parts of your name, nothing else — it becomes the first field of

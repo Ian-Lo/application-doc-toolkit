@@ -5,9 +5,8 @@
 instead.** Installing Claude Code on your own computer is the preferred route: it is more
 flexible, and its behaviour is the best understood, because the method was built and is run
 that way. This browser route has been tested from a Chromebook and it works, but with
-limitations the other guide lists: every save needs a pull request, the role definitions did
-not register in the browser session, and the last step through Google Docs could not be
-tested from the session. Use this guide when a Chromebook is the only computer you have.
+limitations the other guide lists: every save needs a pull request, and the last step through
+Google Docs could not be tested from the session. Use this guide when a Chromebook is the only computer you have.
 
 This guide takes you from nothing to a finished resume and cover letter, as PDF and Word
 files, without installing anything. You will use three websites: github.com (where your
@@ -88,7 +87,7 @@ session, one at a time:
 
 1. **"Set up my fact library from the template."** Claude copies the two templates into
    `Fact_Library.md` and `Open_Questions.md`, and asks you for your identity block: your name
-   as it should appear on a cover letter, your contact line, and the short form of your name
+   as it should appear on a cover letter, your contact lines, and the short form of your name
    used in filenames (for example `Sam_Okafor`). Answer in the chat. It writes them in.
 2. **Feed in your history.** Either:
    - open an old resume, copy all of its text, paste it into the chat, and type
@@ -141,9 +140,10 @@ git add … && git commit … && git push
 ```
 
 The `.claude/agents/` folder holds the three role definitions, and `CLAUDE.md` holds the
-rules that map your sentences to these commands. If Claude mentions that those role
-definitions are *not registered* in its environment, it still runs the three roles, carrying
-each one's limits in its instructions instead; nothing is lost for you.
+rules that map your sentences to these commands. The three roles load as registered agent
+types, and Claude names them as it hands over. If a session ever reports that they are
+*not registered*, it still runs the three roles, carrying each one's limits in its
+instructions instead; nothing is lost for you.
 </details>
 
 ## 6. Get the documents onto your Chromebook, click by click
@@ -181,12 +181,15 @@ request with the same two clicks as in step 5.5.
 
 Three things to know:
 
-- **Your own files are never touched:** `Fact_Library.md`, `Open_Questions.md`, everything
-  under `Applications/` and everything under `sources/`.
-- **Toolkit files are replaced whole.** You are not meant to edit them; if you did, the edit
-  is overwritten (it stays in your repository's history, so nothing is lost for good). If
-  Claude says it refused because a toolkit file has uncommitted changes, say "commit and push"
-  first, then ask again.
+- **Your own files are never touched:** `Fact_Library.md`, `Open_Questions.md`,
+  `Local_Rules.md`, `Applications.base`, everything under `Applications/` and everything
+  under `sources/`.
+- **Toolkit files are replaced whole, and your own rules go in `Local_Rules.md`.** You are not
+  meant to edit toolkit files. If Claude says it refused because a toolkit file has uncommitted
+  changes, say "commit and push" first, then ask again. If it refuses naming files you
+  committed edits to, it says where each change belongs instead; Claude shows you the files and
+  runs the update over them only on your explicit yes, and your edit stays in the repository's
+  history either way.
 - **Occasionally a change needs a matching edit to your fact library** — a new line the checks
   read, say. The update names it, and Claude proposes the edit and waits for your yes.
 

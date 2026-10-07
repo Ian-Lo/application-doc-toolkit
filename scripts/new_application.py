@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 6e6c04f83651 scripts/new_application.py
+# source-hash: 884f9202dcc5 scripts/new_application.py
 """Scaffold an Applications/ folder with the convention files and correct document filenames.
 
 `CLAUDE.md`'s "Application file structure" fixes two naming conventions that are easy to get
@@ -138,8 +138,8 @@ POSTING_SEED = """# {company} — {role}
 <!-- Verbatim, if the ad or the form carries any. -->
 """
 
-STATUS_SEED = """# Application Status — {company}, {role}
-<!-- meta: stage=scaffolded -->
+STATUS_SEED = """{meta}
+# Application Status — {company}, {role}
 
 **Status**: Scaffolded {day} — ad not yet captured, not yet drafted.
 
@@ -159,6 +159,16 @@ None yet.
 """
 
 
+SCAFFOLD_STAGE = "scaffolded"
+
+
+def meta_header() -> str:
+    """The seeded header: a YAML frontmatter block above the H1, one key. Obsidian's Bases
+    view groups on it, and an editor shows it as properties. Inlined rather than rendered by a
+    library because one key needs none."""
+    return "---\nstage: %s\n---" % SCAFFOLD_STAGE
+
+
 def scaffold(apps_dir: str, day: str, company: str, abbrev: str, role: str,
              url: str, candidate: str) -> int:
     folder = folder_name(day, company, role)
@@ -171,7 +181,8 @@ def scaffold(apps_dir: str, day: str, company: str, abbrev: str, role: str,
     written = []
     for name, body in (
         ("posting.md", POSTING_SEED.format(company=company, role=role, url=url, day=day)),
-        ("status.md", STATUS_SEED.format(company=company, role=role, day=day)),
+        ("status.md", STATUS_SEED.format(meta=meta_header(), company=company, role=role,
+                                        day=day)),
     ):
         path = os.path.join(dest, name)
         with open(path, "w", encoding="utf-8") as fh:

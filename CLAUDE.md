@@ -22,6 +22,11 @@ Three rule files live outside this file and **must be read before the work they 
 - `docs/Review_Checklist.md` — before reviewing any drafted resume or cover letter. Holds the
   subtractive accretion diff and the verdict rules.
 
+If `Local_Rules.md` exists at the project root, the role also reads its own section of it
+(`## Voice`, `## Drafting`, `## Review` or `## Recon`) after the rule file it governs, before the work.
+
+**Local rules, and what they never override.** `Local_Rules.md` holds the owner's own rules and is made on request (see *Set up my local rules* below). It wins on voice and on role behaviour. It never overrides the fence and licensing rules (only fact-library facts reach a document), verbatim capture, findings-never-edits, or the lint.
+
 When briefing a subagent for drafting, recon or review, name the relevant file in the brief. A
 brief that omits the pointer loses those rules silently. Spawning the agent by its
 `.claude/agents/` type carries the pointer structurally and is the preferred route.
@@ -38,14 +43,17 @@ or role name into a folder, and never guess a filename field.
 
 | The user means | What you do |
 |---|---|
-| *Set up my fact library* — "set up my fact library from the template", "start my library", "I want to build my fact file" | Copy `Fact_Library_TEMPLATE.md` to `Fact_Library.md` and `Open_Questions_TEMPLATE.md` to `Open_Questions.md`, both at the project root, if they do not exist. Then ask, in one message, for the identity block: the name as it should appear on a cover letter, the contact line, and the `Name for filenames:` value (letters and digits, one underscore between name parts). Write them in, replacing the `>>> REPLACE` markers. |
+| *Set up my fact library* — "set up my fact library from the template", "start my library", "I want to build my fact file" | Copy `Fact_Library_TEMPLATE.md` to `Fact_Library.md` and `Open_Questions_TEMPLATE.md` to `Open_Questions.md`, both at the project root, if they do not exist. Then ask, in one message, for the identity block: the name as it should appear on a cover letter, the contact lines, and the `Name for filenames:` value (letters and digits, one underscore between name parts). Write them in, replacing the `>>> REPLACE` markers. |
+| *Set up my local rules* — "set up my local rules", "I want my own writing rules", "never use these words", "adapt the drafting to my field" | Copy `docs/Local_Rules_TEMPLATE.md` to `Local_Rules.md` at the project root if it does not exist, then ask which of its four sections (`## Voice`, `## Drafting`, `## Review`, `## Recon`) the user wants to fill, and write only what they say. Tell them in one line that their own rules go here and never into a toolkit file, because an update names and refuses a committed edit to one, and that this file never overrides the fence, verbatim capture, findings-never-edits or the lint. |
+| *Set up the applications view* — "set up the applications view", "show my applications in Obsidian", "I want a table of my applications" | Optional, and it needs Obsidian. Copy `docs/Applications.base.template` to `Applications.base` at the project root if it does not exist, and say that Obsidian opens it as a table grouped by stage and writes its own view changes into that file, which the update never touches. |
+| *Mark an application's stage* — "mark Northwind submitted", "I'm skipping the Acme one", "Northwind is ready" | Edit the `stage:` line in the frontmatter block at the top of that folder's `status.md` to `submitted`, `skipped` or `ready`. If the folder is ambiguous, ask which one. If the status file has no such block (an older copy's file opens with an HTML comment), add the three-line block above the heading. |
 | *Propose vignettes* — "propose vignettes from this", "here is my old resume", "I uploaded my old resumes; move them into sources/ and propose vignettes" | If document files (PDF, text, Word) are lying loose at the repository root, move them into `sources/` first — GitHub's upload lands files wherever the user was standing, usually the root. Read the pasted text or every file under `sources/` (PDF and text read directly; a `.docx` cannot be read here — ask the user to re-upload it as PDF via Google Docs). Propose candidate entries in the template's shape, each with the question that would bound it. Write into `Fact_Library.md` **only what the user confirms**; park anything unsure in `Open_Questions.md`. |
 | *New application* — "start a new application for Northwind, Operations Coordinator", "I want to apply for X at Y", "another one for Acme" | Read the first `Name for filenames:` line in `Fact_Library.md`; if it still carries `>>> REPLACE`, ask for it first. Derive CamelCase company and role fields, run `python3 scripts/new_application.py --candidate <name> --company <Co> --role <Role>` (with `--abbrev` when the company name is long), and echo the folder name. |
 | *This is the ad* — "this is the ad, save it verbatim", "here's the job posting" | Write the pasted text into that folder's `posting.md` under **Verbatim ad text**, unchanged. No summary in its place. |
-| *Research, draft, review* — "research the company, then draft, then review", "write the resume and cover letter" | The workflow-order rules below: recon, then drafting, then review, with the mechanical checks pasted into every review brief. |
+| *Research, draft, review* — "research the company, then draft, then review", "write the resume and cover letter" | The workflow-order rules below: recon, then drafting, then review, with the mechanical checks pasted into every review brief. When the first draft pair of a folder is written, set that folder's `status.md` to `stage: drafted`. |
 | *Run the checks* — "run the checks", "lint it", "is it clean?" | `python3 scripts/mechanical_checks.py Applications/<folder> --facts Fact_Library.md`. Report the whole output, fix what drafting can fix, and say what remains. |
 | *Commit and push* — "commit and push", "save it to GitHub", "push it" | Commit the application folder and any library edits, then push. **In a claude.ai/code session the push lands on the session's own `claude/…` branch, never on `main`** — the session is pinned to it. Say so in one line, every time, and tell the user the two clicks that follow: *press **Create PR** on the bar above the message box, then on github.com press **Merge pull request** and then **Confirm merge***. In a terminal session with no such branch, push to the repository's default branch: this is a private single-user repository with no reviewer to make a branch for. |
-| *Update the toolkit* — "update the toolkit from github.com/Ian-Lo/application-doc-toolkit", "get the latest toolkit", "is there a newer version?" | `python3 scripts/update_toolkit.py`. It fetches the public repository and replaces the toolkit's own files wholesale (`CLAUDE.md`, `README.md`, `LICENSE`, `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates), runs the shipped test suites, and prints a diff summary plus the README's *What changed* entries this copy did not have. Report those entries to the user in full. An entry marked `LIBRARY EDIT:` names a change `Fact_Library.md` needs — **propose the edit and wait for a yes**; never make it silently. The script never touches `Fact_Library.md`, `Open_Questions.md`, `Applications/` or `sources/`. If it refuses because a toolkit file has uncommitted changes, do *commit and push* first and run it again. Afterwards the user says *commit and push* as usual. |
+| *Update the toolkit* — "update the toolkit from github.com/Ian-Lo/application-doc-toolkit", "get the latest toolkit", "is there a newer version?" | `python3 scripts/update_toolkit.py`. It fetches the public repository and replaces the toolkit's own files wholesale (`CLAUDE.md`, `README.md`, `LICENSE`, `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates), runs the shipped test suites, and prints a diff summary plus the README's *What changed* entries this copy did not have. Report those entries to the user in full. An entry marked `LIBRARY EDIT:` names a change `Fact_Library.md` needs — **propose the edit and wait for a yes**; never make it silently. The script never touches `Fact_Library.md`, `Open_Questions.md`, `Local_Rules.md`, `Applications/`, `Applications.base` or `sources/`. If it refuses because a toolkit file has uncommitted changes, do *commit and push* first and run it again. If it refuses naming committed edits to toolkit files, show the user those files and offer to move each change to where the refusal says it belongs; run it with `--force` only on the user's explicit yes, because `--force` reverts those edits and the script cannot tell a user's edit from one you made on request. Afterwards the user says *commit and push* as usual. |
 | *PDF / printable / Word version* | There is no script for this. Point at the Google Docs route: `docs/Getting_Started_CLI.md` section 8 in a terminal session (the `.md` is on the user's disk; upload it to Drive, open with Google Docs, export PDF or DOCX), or `docs/Getting_Started.md` section 6 in a claude.ai/code session (download the `.md` from github.com first). |
 
 Two standing rules that hold whether or not the user says the sentence:
@@ -54,16 +62,18 @@ Two standing rules that hold whether or not the user says the sentence:
 - **Never write above the fence in `Fact_Library.md` without a fact the user confirmed in this
   conversation.** A proposal is not a confirmation.
 
-`Fact_Library.md`, `Open_Questions.md` and `sources/` are the user's personal data. The
+`Fact_Library.md`, `Open_Questions.md`, `Local_Rules.md` and `sources/` are the user's personal data. The
 repository stays private; nothing in it is published anywhere by this workflow.
 
 **Two kinds of file, and the split is load-bearing.** Personal data lives only at the root
-(`Fact_Library.md`, `Open_Questions.md`) and under `Applications/` and `sources/`; toolkit
+(`Fact_Library.md`, `Open_Questions.md`, `Local_Rules.md`, `Applications.base`) and under `Applications/` and `sources/`; toolkit
 files live only under the paths the update replaces (`CLAUDE.md`, `README.md`, `LICENSE`,
 `.gitignore`, `.claude/`, `docs/`, `scripts/`, the two templates). `scripts/update_toolkit.py`
 holds both lists as code and its test suite holds them disjoint. **No rule in this file or in
 the guide may ever put user data under `docs/`, `scripts/` or `.claude/`**, and the user is not
-meant to edit toolkit files: an update overwrites them (why: `docs/Conventions_Rationale.md`).
+meant to edit toolkit files: their own rules go in `Local_Rules.md`, and an update names and
+refuses a committed edit to a toolkit file rather than silently reverting it (why:
+`docs/Conventions_Rationale.md`).
 
 ## Document QA
 
@@ -80,7 +90,7 @@ Before presenting a finished resume, cover letter, or artifact:
   it; it does not review around it.
 - Check every `[link text](url)` stays atomic on one line — bracketed text split across a line
   wrap silently breaks the link with no visible error. Re-check after any edit near a link.
-- Check the draft against `docs/Writing_Style.md`.
+- Check the draft against `docs/Writing_Style.md` and, if `Local_Rules.md` exists, its `## Voice` section.
 
 ## Mechanical checks — the orchestrator runs them, always
 
@@ -166,6 +176,11 @@ Applications/YYYY-MM-DD_Company_RoleTitle/
     decisions.md                                     (optional; dated updates once they accumulate)
     Company_Context.md                               (written by recon; symlinked when the company recurs)
 ```
+
+Every `status.md` opens with a three-line frontmatter block, `---` / `stage: <value>` / `---`,
+above its heading. The stage vocabulary is `scaffolded` · `drafted` · `ready` · `submitted` ·
+`skipped`: the scaffold writes `scaffolded`, drafting sets `drafted`, and the user's
+*mark … submitted / skipped / ready* sentence sets the rest.
 
 Resume/cover-letter filename field order is fixed:
 **[candidate]_[Resume|CoverLetter]_[date YYMMDD]_[company, abbreviated]_[role]**, e.g.
@@ -290,7 +305,7 @@ Spawn specs are the orchestrator's; the behaviour rules below them belong to the
 - **If the agent types are not registered** — the spawn fails with *Agent type 'recon' not
   found*, which a claude.ai/code session has done (2026-09-04) — spawn generically and carry
   into the brief everything the definition in `.claude/agents/` would have pinned: the model
-  and effort, the `docs/` file the role must read first, and the tool limits. Tell the user in
+  and effort, the `docs/` file the role must read first, the role's section of `Local_Rules.md` if that file exists, and the tool limits. Tell the user in
   one line that this happened. The limit that matters most is the reviewer's: **a generic
   review spawn gets no Edit or Write tool**, and the brief says it reports findings and never
   edits — without the registered type, that sentence is the only enforcement there is.
