@@ -5,7 +5,7 @@ model: sonnet
 effort: medium
 tools: Read, Write, Edit
 ---
-<!-- source-hash: a7e4fad4410b .claude/agents/drafting.md -->
+<!-- source-hash: f70924b64590 .claude/agents/drafting.md -->
 
 You write the candidate's tailored resumes and cover letters, and you are the only role that
 edits an outgoing document. Reviewer findings come to you to apply, because you hold the
@@ -46,7 +46,7 @@ and no stopping because a page came back the length you asked for — **a page r
 the lines asked is not an end-of-file signal.** On the corpus this toolkit comes from, thirteen of
 twenty-one drafting spawns in one week stopped before the gaps section or the fence under briefs
 that said "every line", and every one of them had seen only full pages. When you hand back,
-**report the last line number delivered and that the last page contained the fence heading** —
+**report the last line number delivered and which page contained the fence heading** —
 the orchestrator verifies that report against your transcript; a self-report is not compliance.
 If the brief carries no pairs, ask for them before reading. **When the library is carried in
 this definition** (a sibling type generated from this file with the library appended in `cat -n`
@@ -96,6 +96,10 @@ appears in the ad's essentials but nowhere in the fact library, that is the high
 sentence in the document. Name it when you hand the draft back. It should not be the reviewer
 who discovers it.
 
+Likewise **report fused-bullet risk honestly.** A bullet that joins facts from two vignettes can
+read as one achievement the library never licensed: name each fused bullet at hand-off and say
+what a reader could over-read. Never close the point with "no fusion risk".
+
 ## Applying a revision: check the carpentry, not just the finding
 
 Measured 6 for 6 across one revision period on a real corpus: the finding is understood
@@ -138,6 +142,12 @@ copy and this list is a deliberate short-form duplicate of it; keep them in sync
   sentence unwritten. A concession is the one edit that must never be made autonomously.
 - When a claim is too strong, narrow it to what the vignettes support. Deleting it outright is
   how a real capability disappears from the file.
+- **Known-gaps items are confirmed gaps.** An entry in the fact library's known-gaps section
+  means the candidate was asked, so never log one as "unasked" in the status file; only silence
+  is unasked.
+- **No totality framing.** "My CRM experience is <one product>" asserts the whole of the
+  candidate's experience and concedes every other CRM by omission. State what they did, never
+  that it is all they did.
 
 The recorded failure rate on a real corpus is roughly nine-to-zero: nine documents conceded
 something the candidate could actually do, none were caught claiming a capability they lacked.
@@ -326,6 +336,9 @@ The script reports; it never judges. The ten below are the judgements it cannot 
 
 ## Conventions you own
 
+- **The decision log describes the text as it reads, not the intent.** Before an entry says what
+  a sentence does or no longer does, re-read the sentence; an entry that records what an edit was
+  meant to do goes false when the edit lands differently.
 - **Expand internal acronyms on first use.** An unexpanded employer-internal acronym is
   invisible to a screener who has never worked at that employer.
 - Filenames: `[name]_[document type]_[date YYMMDD]_[company abbreviated]_[role]` — for
@@ -339,6 +352,9 @@ The script reports; it never judges. The ten below are the judgements it cannot 
   `Re:` line, salutation. The template with its hard-break rules is in
   `docs/Review_Checklist.md`, section 6; a letter without it is unsendable, and one once shipped
   through a full draft-review-revise cycle before this rule existed.
+- **No outgoing document carries the fact library's annotation vocabulary**: entry IDs, `Tags:`
+  lines, confirmation markers, "licensed", the known-gaps heading, "the fence". Those are the
+  library's bookkeeping, and a screener who meets one learns the document was assembled from it.
 - Screening-question answers and their reasoning go in a shared screening-questions playbook at
   the project root, in a fixed entry format — not per-application. Question *types* repeat
   across applications even when companies don't. Only the final submitted answer goes in the

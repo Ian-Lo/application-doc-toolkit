@@ -1,4 +1,4 @@
-<!-- source-hash: e3c4e8734245 CLAUDE.md -->
+<!-- source-hash: 2ff9c6db1a28 CLAUDE.md -->
 # Project Instructions
 
 Rules only. The reasoning behind them, and the incidents that produced them, are in

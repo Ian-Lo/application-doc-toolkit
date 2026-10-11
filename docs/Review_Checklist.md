@@ -1,4 +1,4 @@
-<!-- source-hash: 442e85bce99f docs/Review_Checklist.md -->
+<!-- source-hash: a969e8c1f2ab docs/Review_Checklist.md -->
 # Application review checklist
 
 **Read this before reviewing any resume or cover letter.** Read `Writing_Style.md` alongside it —
@@ -248,9 +248,10 @@ the content words present on **one side only** — `+line` and `+bullet`.
 2. **Then read `+bullet`.** **Direction is not stable.** Sometimes the letter is right and the
    resume wrong, sometimes the reverse. Settle which side the fact library licenses before
    recommending a change to either — a finding that names the wrong side costs a whole round.
-3. **Treat an unpaired derived line as a different finding.** The section reports the count and
-   deliberately prints no bullet for it: below the overlap floor there is no plausible source, which
-   means a claim with nothing under it, not a compression defect. Chase it as an unsupported claim.
+3. **Treat an unpaired derived line as a different finding.** The section lists each one
+   (`unpaired: <label> L<n>: …`, capped like the pairs) and deliberately prints no bullet for it:
+   below the overlap floor there is no plausible source, which means a claim with nothing under it,
+   not a compression defect. Chase it as an unsupported claim.
 
 **The printed pairs are not the whole set.** Pairs with nothing on one side only are counted as
 `matched cleanly` rather than printed, and the printed list is capped. When the count of differing

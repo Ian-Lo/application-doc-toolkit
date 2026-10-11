@@ -1,5 +1,5 @@
 # banned_patterns.txt - the single source for every banned string in an outgoing document.
-# source-hash: 4d4c9c0b903a scripts/banned_patterns.txt
+# source-hash: 4b9f18483be0 scripts/banned_patterns.txt
 #
 # Read by mechanical_checks.py. Keep the human rationale, and every adjudicated exception,
 # in a notes file of your own - and read it before adding, removing or relaxing a pattern
@@ -66,6 +66,21 @@ re:\b(sit|sits|sitting|sat)\b
 # reports twice.
 re:\b(this|your) role\b[^.]{0,10}\b(asks?|needs|runs (on|across)|is (about|close to))
 
+# Added later: `the role` without `needs`. The conditional "If the role needs..." is the false
+# positive a bare widening brings, and ERE has no lookbehind to exclude it. `is close to` is
+# left to the entry further down so no line reports twice.
+re:\bthe role\b[^.]{0,10}\b(asks?|runs (on|across)|is about)
+# Added later, each from a review finding: the letter restating the ad back at the employer.
+re:\b(duties|requirements?) in the ad\b
+re:\bhalf of the ad\b
+re:\bmeets? (this|the) role\b
+the evidence comes from
+
+# Third-person role restatement ("A Reviewer at Acme Analytics stands between..."). Case-
+# insensitive by necessity (ERE has no scoped flag); measure it across your documents before
+# trusting it, since a person's own role description can match.
+re:\b(An?|The) [a-z-]+( [a-z-]+){0,3} at [a-z&.]+( [a-z&.]+){0,2} (stands|sits|works|owns|spends|decides|is the)\b
+
 # Widened later, on a third pass. The narrow pattern above only catches "this role" as the
 # subject; the formula paraphrases around it just as readily with "your ad", "the ad", "this
 # posting", or a demonstrative comparison ("the same discipline ... your ..."). On the source
@@ -94,12 +109,15 @@ re:\b(your|this) ad\b
 # to concede.
 # Widened: the original literal ("the closest thing on my record to") was evaded by swapping
 # one noun ("the closest parallel I can offer"). The regex below replaced it.
-re:\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b
+# Widened: `|in my (record|history|background)` added after a draft said "The closest match
+# in my record is ...". Replaces the earlier form.
+re:\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have|in my (record|history|background))\b
 
 # The self-diminishing comparative again, graded against the ad ("is close to what I did"),
 # and the letter pointing back at its own link as a closer. `tic`: adjudicate, never hard-fail.
+# The closer's stem is widened to address/header/page and "is (also) there if|for anyone".
 re:is close to (what|the work) I did
-re:\b(link|corpus)\b[^.]{0,10}\babove is there if\b
+re:\b(link|corpus|address|header|page)\b[^.]{0,30}\bis (also )?there (if|for anyone)\b
 
 # These almost never describe the candidate's own approval authority - they describe a
 # client's procurement gate. Licensed instances exist; adjudicate before removing a hit.
@@ -138,6 +156,8 @@ re:\bspearhead(s|ed|ing)?\b
 # pattern; ads use the word themselves, which is likely how it seeds into drafts. Only
 # outgoing documents are scanned, so the ad's own usage does not cost a false hit.
 re:\bgenuine(ly)?\b
+# "I am applying ..." in any form is a fit bridge: the cover letter already is the application.
+re:\bI( am|'m) applying\b
 
 
 #@ selfdq

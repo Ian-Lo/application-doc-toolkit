@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: 956f086cec30 scripts/mechanical_checks.py
+# source-hash: 44668c01d8f7 scripts/mechanical_checks.py
 """mechanical_checks.py - a document reviewer's mechanical pass, as one command.
 
     python3 mechanical_checks.py path/to/one-application-folder
@@ -330,6 +330,23 @@ def check_atomicity(text: str) -> list:
     return problems
 
 
+MIDLINE_BULLET_RE = re.compile(r"(?<=\S)[.!?]\s*- (\*\*)?[A-Z]")
+
+
+def check_midline_bullets(text: str) -> list:
+    """A bullet marker fused onto the end of the previous sentence ("sentence.- Next
+    bullet"), which renders as one paragraph. Returns [(lineno, message)].
+
+    Case-sensitive on the capital after the marker. Deliberately detects only a `.`, `!` or
+    `?` before the marker: a `)`, `:` or `;` fusion is NOT detected, because the wider class
+    hit real degree lines such as "Master of Science (Statistics) - Example
+    University"; a closing quote is excluded for the same reason (a dash after a quoted title).
+    """
+    return [(n, "mid-line bullet marker")
+            for n, line in enumerate(text.splitlines(), start=1)
+            if MIDLINE_BULLET_RE.search(line)]
+
+
 # ---------------------------------------------------------------------------
 # Ad vocabulary the facts file does not license.
 #
@@ -508,8 +525,18 @@ def read_posting(app_dir: str) -> str:
     return ""
 
 
-def section_blocks(text: str) -> list:
+# A line that is nothing but one bold span: a role or project heading, never a claim. A bold
+# lead-in with text after it (`**Project** (Python) - specified and built ...`) is a source.
+WHOLLY_BOLD_LINE_RE = re.compile(r"^\*\*[^*]+\*\*$")
+
+
+def section_blocks(text: str, skip_bold_headings: bool = False) -> list:
     """Headers paired with the items beneath them.
+
+    `skip_bold_headings` drops a line that is wholly one bold span (a bold role heading such
+    as `**Support Engineer, Acme Corp (Nov 2021 - Jun 2022)**`). The bullet test below is
+    startswith("*"), so those lines are items by default - right for a section-headers
+    printout, wrong for source_bullets(), where a heading is not a claim.
 
     A block may be a bullet list (`-`/`*`/`•`), a middle-dot-separated prose line (skills
     sections are often written this way), or a plain paragraph. All three count as items -
@@ -535,6 +562,8 @@ def section_blocks(text: str) -> list:
             if current:
                 out.append((current, items))
             current, items, saw_bullet = m.group(2).strip(), [], False
+        elif skip_bold_headings and current and WHOLLY_BOLD_LINE_RE.match(line.strip()):
+            continue
         elif current and line.strip().startswith(("-", "*", "•")):
             if not saw_bullet:
                 flush_prose()
@@ -668,7 +697,7 @@ def source_bullets(resume_text: str) -> list:
     (education, certifications) counts - which is how a personal-projects block stays in.
     """
     out = []
-    for header, items in section_blocks(resume_text):
+    for header, items in section_blocks(resume_text, skip_bold_headings=True):
         head = header.strip()
         if DERIVED_HEADER_RE.match(head) or NON_SOURCE_HEADER_RE.match(head):
             continue
@@ -737,7 +766,8 @@ def fmt_words(words: list) -> str:
 
 
 def compression_pairs(resume_text: str, letter_body: str, stopwords: set) -> tuple:
-    """(rows, clean, unpaired). A row is (label, line, bullet, only_line, only_bullet).
+    """(rows, clean, unpaired). A row is (label, line, bullet, only_line, only_bullet);
+    `unpaired` is the list of (label, line) with no source bullet (listed by the report).
 
     Only pairs with content words on BOTH sides are rows: a derived line that merely drops
     words asserts nothing new, and printing it would cost five lines to say "faithful". Those
@@ -745,13 +775,13 @@ def compression_pairs(resume_text: str, letter_body: str, stopwords: set) -> tup
     still knows the check ran.
     """
     bullets = source_bullets(resume_text)
-    rows, clean, unpaired = [], 0, 0
+    rows, clean, unpaired = [], 0, []
     for label, line in derived_lines(resume_text, letter_body):
         if len(content_words(line, stopwords)) < PAIR_MIN_DERIVED_WORDS:
             continue  # a bare skills token ("Advanced Excel") compresses nothing
         score, bullet, only_a, only_b = best_source(line, bullets, stopwords)
         if not bullet:
-            unpaired += 1
+            unpaired.append((label, line))
             continue
         if only_a and only_b:
             rows.append((label, line, bullet, only_a, only_b))
@@ -820,6 +850,18 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
         print("  BROKEN  %s L%d - %s" % (fname, n, msg))
     if not atom:
         print("  no split links")
+
+    print("\nMID-LINE BULLET MARKERS")
+    midline = []
+    for path in docs:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        for n, msg in check_midline_bullets(text):
+            midline.append((os.path.basename(path), n, msg))
+    for fname, n, msg in midline:
+        print("  BROKEN  %s L%d - %s" % (fname, n, msg))
+    if not midline:
+        print("  no bullet marker fused onto the end of a sentence")
 
     print("\nDURATIONS - re-derive each phrase against the canonical spans below")
     found_any = False
@@ -901,7 +943,15 @@ def report_application(app_dir: str, cats: dict, spans: list, patterns_path: str
             print("      ... %d more differing pair(s) not shown (cap %d)"
                   % (len(rows) - PAIR_CAP, PAIR_CAP))
         print("  %d pair(s) matched cleanly; %d derived line(s) had no source bullet above"
-              " the overlap floor" % (clean, unpaired))
+              " the overlap floor" % (clean, len(unpaired)))
+        # Listed, never given a bullet: an unpaired line has none. Capped as the pair list is.
+        for label, line in unpaired[:PAIR_CAP]:
+            ln, _ = locate_item(line, letter_text if label == "Letter topic sentence"
+                                else resume_text)
+            print("  unpaired: %s L%d: %s" % (label, ln, line[:88]))
+        if len(unpaired) > PAIR_CAP:
+            print("  ... %d more unpaired line(s) not shown (cap %d)"
+                  % (len(unpaired) - PAIR_CAP, PAIR_CAP))
     print("  Ask of each pair: does the derived line assert something its bullet does not?")
     print("  DIRECTION IS NOT STABLE - the bullet is the wrong side as often as the line is,")
     print("  so settle which side the facts file licenses before changing either. An")

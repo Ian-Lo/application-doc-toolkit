@@ -5,7 +5,7 @@ model: haiku
 effort: low
 tools: WebFetch, WebSearch, Read, Write
 ---
-<!-- source-hash: 9f1c2ea85525 .claude/agents/recon.md -->
+<!-- source-hash: 3946626c881e .claude/agents/recon.md -->
 
 You research companies for the candidate's job applications and write findings to that
 company's `Company_Context.md`. Nothing else.

@@ -1,4 +1,4 @@
-<!-- source-hash: 2bee75a1949f docs/Conventions_Rationale.md -->
+<!-- source-hash: dd1d5397060b docs/Conventions_Rationale.md -->
 # Why the conventions exist
 
 Background for the rules in `CLAUDE.md`. Read this when a rule looks arbitrary or you're
@@ -522,7 +522,11 @@ content rather than erroring.
 
 **Per-role agent-definition files don't share this staleness.** The same stale spawn correctly
 quoted wording added to its own role file in the same commit — those are read fresh per spawn,
-unlike the shared project instructions file.
+unlike the shared project instructions file. Fresh, but not instantly: Claude Code picks up an
+edit under `.claude/agents/` through a file watcher, which its documentation says takes a few
+seconds. A spawn five seconds after an agent file was rewritten still carried the old body; one
+five minutes later carried the new one. After editing an agent file, wait before spawning that
+type to test the edit.
 
 **The operational rule this earns:** validating a change to the project instructions file
 requires a probe from a genuinely fresh process — a new terminal invocation, not a new spawn
@@ -587,3 +591,44 @@ It applies to fresh instances only: a first draft for a new application and a fr
 a revision spawn (a different job) and never a cross-application sweep. The sibling freezes the
 library at generation, so regenerate it immediately before every spawn rather than trusting a
 staleness warning that only runs at pass boundaries.
+
+## A correction is finished only when earlier documents are re-checked
+
+A library fact was corrected: an artefact the candidate had been credited with building turned
+out to have been written by someone else to their specification, and the library gained a rule
+against "built" or "wrote" for it. The library entry and the application that raised the question
+were fixed. Nothing else was. Two days later a sweep found 24 surviving instances in 13 documents
+across 12 applications; two of those applications were marked final, and one instance had already
+been sent.
+
+Nothing caught it, for structural reasons. A banned pattern cannot express the rule, because
+"built" is a fine word everywhere else: the defect is a common verb paired with one of a few
+artefact names. A review reads only the application in front of it. And the library entry recorded
+the rule, not how many live documents it invalidated.
+
+**Every rule has a date, and every document written before it is presumptively non-compliant.**
+So when a correction changes what may be claimed about a named artefact, employer, platform or
+date, search the drafted documents for the old claim in the same pass (`docs/Fact_Library_Guide.md`,
+section 6). Two cautions from the same sweep. Both instance lists built by search were incomplete,
+so brief a sweep with the rule and the artefact class, not a list of line numbers. And a corrected
+verb is not automatically a grammatical sentence ("directed a scheduled health check" does not
+parse), so re-read a sample of the sentences the sweep wrote, not just the strings it removed.
+
+## One copy of each fact
+
+A shared tracker regrew far past its cap because its rows restated what each application folder's
+own status file already held, and nothing removed a row once the folder moved on. Asked where else
+the project kept two copies of one piece of information, an inventory found hand-kept copies in
+nine places, among them rules restated for each role, final screening answers, salary figures and
+open items. Most of the project's drift checks existed only to catch those copies diverging. The
+same afternoon, the plan for the fix proposed two new copies of its own, and they were caught only
+because the user asked the question.
+
+**The rule: warn the user whenever the repository holds, or a change is about to create, two copies
+of one piece of information.** Name both, say whether a script generates one from the other, and
+propose a single source: derive it on read, or generate it with a freshness check. A generated copy
+is far safer than a hand-kept one but still gets named, because only the user can weigh the
+convenience against a check that has to keep running. Deliberate duplicates, the ones that say so in
+their own text (the role-facing copies of the mechanical-checks rule are one), are covered too,
+since an edit to one is exactly when they drift. A subagent cannot reach the user, so it puts the
+warning in its report.

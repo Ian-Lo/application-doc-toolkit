@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# source-hash: d6f9e17a8014 scripts/test_mechanical_checks.py
+# source-hash: bb0cb2852248 scripts/test_mechanical_checks.py
 """Tests for banned_patterns.txt and mechanical_checks.py.
 
     python3 test_mechanical_checks.py
@@ -32,10 +32,12 @@ CHECKS = os.path.join(HERE, "mechanical_checks.py")
 sys.path.insert(0, HERE)
 import mechanical_checks as mc  # noqa: E402
 
-# raw pattern -> (must match, must NOT match)
+# raw pattern -> (block, must match, must NOT match). `block` is the `#@ <category>` block of
+# banned_patterns.txt the pattern sits in; test_every_pattern_sits_in_its_declared_block.
 PROBES = {
     # --- tic ---
     r"\b(sit|sits|sitting|sat)\b": (
+        "tic",
         ["the layer sits underneath", "sitting behind it", "sat inside the team",
          "a tool that sits alongside", "where the role sits in the org"],
         ["university of sydney", "the position was", "data visualisation",
@@ -44,6 +46,7 @@ PROBES = {
     # Replaced `\bthis role (asks for|needs|runs on|is about)\b`; that entry's four positives
     # come first and must still hit.
     r"\b(this|your) role\b[^.]{0,10}\b(asks?|needs|runs (on|across)|is (about|close to))": (
+        "tic",
         ["the discipline this role runs on", "the coordination this role needs",
          "what this role asks for", "the work this role is about",
          "what your role asks", "the estate this role runs across", "this role is close to",
@@ -56,6 +59,7 @@ PROBES = {
     ),
     # Replaced the `... for someone` form, whose four positives come first and must still hit.
     r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,25}\b(asks?|is asking|needs|wants)\b": (
+        "tic",
         ["your ad asks for someone who", "the ad is asking for someone with",
          "this posting wants for someone", "this role needs for someone able to",
          "the specific background this role is asking for", "the same shape this role asks for",
@@ -65,15 +69,18 @@ PROBES = {
          "this posting, which I read twice, needs"],
     ),
     r"\b(asks?|is asking|wants) for someone who\b": (
+        "tic",
         ["asks for someone who can", "is asking for someone who has",
          "wants for someone who understands"],
         ["asks for clarification on the role", "wants someone with the right background"],
     ),
     r"\ba role like this one\b": (
+        "tic",
         ["a role like this one rewards", "in a role like this one"],
         ["a role unlike anything I've held", "this one role stood out"],
     ),
     r"\bthe same\b[^.]{0,40}\byour\b": (
+        "tic",
         # The four nouns an earlier, narrower alternation named, all still caught...
         ["the same discipline your external-worker provisioning work needs",
          "the same rhythm your team's release cycle runs on",
@@ -92,40 +99,85 @@ PROBES = {
          " your name came up"],
     ),
     r"\banswers?\b[^.]{0,20}\bthe ad's\b": (
+        "tic",
         ["answer the ad's interest in high-throughput processing directly",
          "answers the ad's non-functional-testing bar"],
         ["answers a genuine question", "the ad's own wording is direct",
          "answer to the selection criteria"],
     ),
     r"\b(your|this) ad\b": (
+        "tic",
         ["your ad names Procurement directly", "this ad's essential-experience list",
          "in your ad", "reading this ad closely"],
         ["your advice was useful", "this address is current", "your address book"],
     ),
     # Replaced the literal `the closest thing on my record to`; its positive comes first and
     # must still hit.
-    r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b": (
+    r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have|in my (record|history|background))\b": (
+        "tic",
         ["the closest thing on my record to a formal writing sample",
          "the closest thing in my history to", "the closest parallel I can offer",
          "the closest analogue I have", "the closest analog on my record",
-         "the closest match on my record"],
+         "the closest match on my record",
+         # Widened later: the first-draft sentence that evaded the earlier form.
+         "The closest match in my record is my last employer", "the closest thing in my background"],
         ["the closest office is in Parramatta", "my closest thing to hand",
          "the closest match. I have more below"],
     ),
     r"is close to (what|the work) I did": (
+        "tic",
         ["this is close to what I did at my last employer", "which is close to the work I did there"],
         ["is close to what I do now", "was close to what I did"],
     ),
-    r"\b(link|corpus)\b[^.]{0,10}\babove is there if\b": (
+    # Widened; the old two positives come first and must still hit.
+    r"\b(link|corpus|address|header|page)\b[^.]{0,30}\bis (also )?there (if|for anyone)\b": (
+        "tic",
         ["The corpus linked above is there if you want the detail",
-         "the link above is there if useful"],
-        ["the link above is broken", "the linked article above is there if needed"],
+         "the link above is there if useful",
+         "The web address in my header is there for anyone who wants it",
+         "the career page is also there if useful"],
+        ["the link above is broken", "the linked article above is there if needed",
+         "the page is there to read. Anyone is welcome"],
+    ),
+    r"\bthe role\b[^.]{0,10}\b(asks?|runs (on|across)|is about)": (
+        "tic",
+        ["what the role asks", "the discipline the role runs on", "the work the role is about"],
+        ["If the role needs a writer", "the roles ask a lot", "the role. Asks nothing"],
+    ),
+    r"\b(duties|requirements?) in the ad\b": (
+        "tic",
+        ["the duties in the ad", "the requirement in the ad"],
+        ["the duties in the advertised role", "requirements in the ladder"],
+    ),
+    r"\bhalf of the ad\b": (
+        "tic",
+        ["the first half of the ad", "about half of the ad names SQL"],
+        ["half of the advertisers", "half of the adults"],
+    ),
+    r"\bmeets? (this|the) role\b": (
+        "tic",
+        ["where my background meets this role", "my record meets the role"],
+        ["she meets the roller", "meets this rolling brief"],
+    ),
+    "the evidence comes from": (
+        "tic",
+        ["The evidence comes from the 2023 audit"],
+        ["the evidence came from"],
+    ),
+    r"\b(An?|The) [a-z-]+( [a-z-]+){0,3} at [a-z&.]+( [a-z&.]+){0,2} (stands|sits|works|owns|spends|decides|is the)\b": (
+        "tic",
+        ["A Reviewer at Acme Analytics stands between the model and the client",
+         "The senior analyst at Acme Pty Ltd owns the numbers"],
+        ["I worked at Acme as an analyst", "A reviewer at Acme Analytics is welcome to read it",
+         "The team at Acme delivered"],
     ),
     r"\bsign-?off\b": (
+        "tic",
         ["procurement sign-off", "went to signoff", "sign-off was granted"],
         ["signed off on it", "signing the contract", "design office"],
     ),
     r"\b(dated|sourced)[a-z, ]{0,20}\bdetail behind\b": (
+        "tic",
         # The three variants measured across one pass, plus the retired style-guide
         # prescription that seeded all of them.
         ["The dated detail behind every claim above",
@@ -138,6 +190,7 @@ PROBES = {
          "dated, sourced, and checked against the transcript"],
     ),
     r"\b(detail|record|evidence|backing|substance|version)\b[a-z, ]{0,15}\bbehind (each|every|those)\b": (
+        "tic",
         # The two measured evasions of the narrower pattern above, plus the retired stem itself.
         ["the fuller record behind each claim above",
          "the dated, sourced detail behind every claim above",
@@ -147,26 +200,34 @@ PROBES = {
          "the reasoning behind each recommendation", "left the paperwork behind"],
     ),
     # --- tell ---
-    "I'm writing to apply": (["I'm writing to apply for the role"], ["I am applying for"]),
-    "I would welcome the opportunity": (["I would welcome the opportunity to talk"], ["I welcome feedback"]),
-    "I'd welcome the opportunity": (["I'd welcome the opportunity to talk"], ["I welcome feedback"]),
-    "thank you for considering": (["thank you for considering my application"], ["thanks for reading"]),
-    "opportunity to discuss": (["an opportunity to discuss the role"], ["a chance to talk it through"]),
-    "I recognise that": (["I recognise that the ad asks for"], ["I recognise the pattern"]),
+    "I'm writing to apply": ("tell", ["I'm writing to apply for the role"], ["I am applying for"]),
+    "I would welcome the opportunity": ("tell", ["I would welcome the opportunity to talk"], ["I welcome feedback"]),
+    "I'd welcome the opportunity": ("tell", ["I'd welcome the opportunity to talk"], ["I welcome feedback"]),
+    "thank you for considering": ("tell", ["thank you for considering my application"], ["thanks for reading"]),
+    "opportunity to discuss": ("tell", ["an opportunity to discuss the role"], ["a chance to talk it through"]),
+    "I recognise that": ("tell", ["I recognise that the ad asks for"], ["I recognise the pattern"]),
     r"\bleverag(e|es|ed|ing)\b": (
+        "tell",
         # a bare-substring version MISSES "leveraging" and MATCHES "deleverage";
         # both are fixed by this pattern and both are probed here.
         ["we leverage the platform", "leveraged the platform", "leveraging it", "it leverages"],
         ["deleverage the balance sheet", "leverageable"],
     ),
-    r"\bseamless(ly)?\b": (["seamless integration", "seamlessly integrated"], ["seamlessness of it"]),
-    r"\brobust(ly|ness)?\b": (["a robust pipeline", "robustly tested", "robustness matters"], ["robusta coffee"]),
-    r"\brigorous(ly)?\b": (["rigorous testing", "rigorously tested"], ["rigour matters"]),
+    r"\bseamless(ly)?\b": ("tell", ["seamless integration", "seamlessly integrated"], ["seamlessness of it"]),
+    r"\brobust(ly|ness)?\b": ("tell", ["a robust pipeline", "robustly tested", "robustness matters"], ["robusta coffee"]),
+    r"\brigorous(ly)?\b": ("tell", ["rigorous testing", "rigorously tested"], ["rigour matters"]),
     r"\bspearhead(s|ed|ing)?\b": (
+        "tell",
         ["spearhead the work", "spearheaded the work", "spearheading it", "she spearheads it"],
         ["spearfishing trip", "the spear was headed north"],
     ),
+    r"\bI( am|'m) applying\b": (
+        "tell",
+        ["I am applying to work in your team", "I'm applying for the Analyst role"],
+        ["thank you for applying", "I applied last week", "I am applicable"],
+    ),
     r"\bgenuine(ly)?\b": (
+        "tell",
         ["a genuine interest in the sector", "genuinely want to be adjacent to it",
          "a genuine constraint"],
         # "genuineness" and "ingenuity" both fail \b on the trailing / leading side.
@@ -176,32 +237,34 @@ PROBES = {
         ["genuineness of the claim", "ingenuity under pressure"],
     ),
     # --- selfdq --- each one withdraws the application
-    r"isn't the right (match|fit|hire)": (["if that isn't the right fit"], ["it is the right fit"]),
-    r"is not the right (match|fit|hire)": (["this is not the right match"], ["this is the right match"]),
+    r"isn't the right (match|fit|hire)": ("selfdq", ["if that isn't the right fit"], ["it is the right fit"]),
+    r"is not the right (match|fit|hire)": ("selfdq", ["this is not the right match"], ["this is the right match"]),
     r"if .{0,60}(hard requirement|non-negotiable|deal-?breaker)": (
+        "selfdq",
         ["if the certificate is a hard requirement", "if that is a dealbreaker for you"],
         ["a hard requirement is listed"],
     ),
-    r"you (may|might|would) prefer": (["you may prefer a candidate with"], ["you prefer clarity"]),
-    r"may prefer someone": (["you may prefer someone with more"], ["prefers someone senior"]),
-    r"understand if this": (["I understand if this rules me out"], ["I understand this role"]),
-    r"rules me out": (["if that rules me out"], ["the rule is out of date"]),
-    r"counts me out": (["if that counts me out"], ["the count is out"]),
+    r"you (may|might|would) prefer": ("selfdq", ["you may prefer a candidate with"], ["you prefer clarity"]),
+    r"may prefer someone": ("selfdq", ["you may prefer someone with more"], ["prefers someone senior"]),
+    r"understand if this": ("selfdq", ["I understand if this rules me out"], ["I understand this role"]),
+    r"rules me out": ("selfdq", ["if that rules me out"], ["the rule is out of date"]),
+    r"counts me out": ("selfdq", ["if that counts me out"], ["the count is out"]),
     # The regex only catches the unhedged phrasing: "may not be the candidate" is hedged
     # and deliberately not matched.
-    r"not the candidate": (["I am not the candidate you need"], ["another candidate"]),
-    r"waste anyone's": (["I won't waste anyone's time"], ["a waste of effort"]),
-    r"waste your time": (["rather than waste your time"], ["a waste of effort"]),
+    r"not the candidate": ("selfdq", ["I am not the candidate you need"], ["another candidate"]),
+    r"waste anyone's": ("selfdq", ["I won't waste anyone's time"], ["a waste of effort"]),
+    r"waste your time": ("selfdq", ["rather than waste your time"], ["a waste of effort"]),
     # Replaced `rather say (so|that) (now|plainly)`; its positive comes first and must still hit.
     r"rather say (so|that|it)? ?(now|plainly)": (
+        "selfdq",
         ["I would rather say so now", "I'd rather say it plainly", "I would rather say now"],
         ["I would rather say nothing", "I would rather not say so now"]),
-    r"stating that plainly": (["stating that plainly upfront"], ["stated plainly in the resume"]),
-    r"saying that upfront": (["saying that upfront matters"], ["said upfront"]),
-    r"rather than dressing it up": (["rather than dressing it up"], ["dressed up language"]),
-    r"genuine gap, stated plainly": (["a genuine gap, stated plainly"], ["a genuine gap in the record"]),
-    r"competence I haven't earned": (["claiming competence I haven't earned"], ["competence I have earned"]),
-    r"before we go further": (["before we go further, one gap"], ["we went further"]),
+    r"stating that plainly": ("selfdq", ["stating that plainly upfront"], ["stated plainly in the resume"]),
+    r"saying that upfront": ("selfdq", ["saying that upfront matters"], ["said upfront"]),
+    r"rather than dressing it up": ("selfdq", ["rather than dressing it up"], ["dressed up language"]),
+    r"genuine gap, stated plainly": ("selfdq", ["a genuine gap, stated plainly"], ["a genuine gap in the record"]),
+    r"competence I haven't earned": ("selfdq", ["claiming competence I haven't earned"], ["competence I have earned"]),
+    r"before we go further": ("selfdq", ["before we go further, one gap"], ["we went further"]),
 }
 
 
@@ -226,14 +289,26 @@ class TestPatternFile(unittest.TestCase):
         stale = sorted(set(PROBES) - live)
         self.assertEqual(stale, [], "probes for patterns not in the file: %r" % stale)
 
+    def test_every_pattern_sits_in_its_declared_block(self):
+        """setUp flattens load_categories(), so block membership was never asserted and a
+        pattern moved between `#@` blocks (tic -> selfdq changes severity) passed. The
+        prefix is stripped as the probe tests do: Pattern.raw keeps `re:`, PROBES keys do
+        not."""
+        wrong = []
+        for raw, (block, _pos, _neg) in PROBES.items():
+            in_block = {p.raw.replace("re:", "", 1) for p in self.cats[block]}
+            if raw not in in_block:
+                wrong.append((raw, block))
+        self.assertEqual(wrong, [], "patterns not in their declared block: %r" % wrong)
+
     def test_positive_probes_match(self):
-        for raw, (positives, _neg) in PROBES.items():
+        for raw, (_block, positives, _neg) in PROBES.items():
             rx = re.compile(raw, re.I)
             for s in positives:
                 self.assertTrue(rx.search(s), "pattern %r should match %r" % (raw, s))
 
     def test_negative_probes_do_not_match(self):
-        for raw, (_pos, negatives) in PROBES.items():
+        for raw, (_block, _pos, negatives) in PROBES.items():
             rx = re.compile(raw, re.I)
             for s in negatives:
                 self.assertFalse(rx.search(s), "pattern %r must NOT match %r" % (raw, s))
@@ -437,7 +512,10 @@ class TestBodyVsCompression(unittest.TestCase):
         rows, clean, unpaired = self.pairs(resume)
         self.assertEqual(rows, [])
         self.assertEqual(clean, 0)
-        self.assertEqual(unpaired, 1)
+        # The lines themselves come back, not a count.
+        self.assertEqual(len(unpaired), 1)
+        self.assertEqual(unpaired[0][0], "Core Skills")
+        self.assertIn("Actuarial reserving", unpaired[0][1])
 
     def render(self, resume):
         """The printed BODY vs COMPRESSION section for a resume, via the real report."""
@@ -450,6 +528,55 @@ class TestBodyVsCompression(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         body = r.stdout.split("BODY vs COMPRESSION", 1)[1]
         return body.split("\nAD VOCABULARY", 1)[0]
+
+    def test_an_unpaired_line_is_listed_in_the_report_with_no_bullet_under_it(self):
+        """The count alone named nothing, so a reader could not tell the unpaired lines from
+        the pair blocks printed above them. Listed, but never given a bullet - an unpaired
+        line has none - so no `bullet` line may follow it."""
+        resume = (
+            "## Core Skills\n\n"
+            "- Actuarial reserving, mortality modelling and Solvency II capital reporting\n\n"
+            + self.EXPERIENCE
+        )
+        lines = self.render(resume).splitlines()
+        idx = [i for i, l in enumerate(lines) if l.startswith("  unpaired: ")]
+        self.assertEqual(len(idx), 1, lines)
+        self.assertIn("Core Skills L", lines[idx[0]])
+        self.assertIn("Actuarial reserving", lines[idx[0]])
+        self.assertFalse(any("bullet" in l for l in lines[idx[0]:idx[0] + 2]
+                             if l.startswith("      bullet")), lines)
+        self.assertIn("1 derived line(s) had no source bullet", self.render(resume))
+
+    def test_the_unpaired_list_is_capped_and_the_overflow_announced(self):
+        skills = "".join(
+            "- Actuarial reserving %d, mortality modelling and Solvency II capital reporting\n" % i
+            for i in range(mc.PAIR_CAP + 3))
+        out = self.render("## Core Skills\n\n" + skills + "\n" + self.EXPERIENCE)
+        listed = [l for l in out.splitlines() if l.startswith("  unpaired: ")]
+        self.assertEqual(len(listed), mc.PAIR_CAP)
+        self.assertIn("... 3 more unpaired line(s) not shown", out)
+
+    def test_a_bold_role_heading_line_is_not_a_source_bullet(self):
+        """section_blocks() takes any line starting with `*` as a bullet, so a bold role
+        heading paired with a summary sentence. A heading is not a claim."""
+        resume = (
+            "## Experience\n\n"
+            "**Support Engineer, Acme Corp (Nov 2021 \u2013 Jun 2022)**\n"
+            "- Migrated a legacy Spark environment to a managed platform.\n"
+        )
+        self.assertEqual(mc.source_bullets(resume),
+                         ["Migrated a legacy Spark environment to a managed platform."])
+        # The default view is unchanged: it still lists the heading line.
+        items = dict(mc.section_blocks(resume))["Experience"]
+        self.assertEqual(len(items), 2)
+
+    def test_a_bold_led_line_with_claim_text_after_the_bold_span_stays_a_source_bullet(self):
+        """Only a wholly bold line is a heading. `**Project** (...) - specified and built ...`
+        is a project entry and a real source."""
+        entry = ("**Ledger Tool** (Python; private repo) \u2014 specified and built a "
+                 "normalised relational schema.")
+        resume = "## Analysis Projects\n\n" + entry + "\n"
+        self.assertEqual(mc.source_bullets(resume), [entry.replace("**", "")])
 
     def test_the_cap_holds_and_the_overflow_is_announced(self):
         """PAIR_CAP. The whole report is pasted into every subagent brief."""
@@ -588,6 +715,48 @@ class TestClaimSplitOffset(unittest.TestCase):
                          mc.claim_split("Jane_Doe_CoverLetter_260910_Acme_Role.md", text)[1])
 
 
+class TestMidlineBulletMarkers(unittest.TestCase):
+    """A bullet marker fused onto the end of a sentence."""
+
+    def test_fused_markers_fire(self):
+        for text in ("- Built the pipeline.- Next bullet", "- Shipped it!- Next",
+                     "- Done.- **Bold** next", "- Why?- Because"):
+            self.assertEqual(len(mc.check_midline_bullets(text)), 1, text)
+
+    def test_ordinary_dashes_do_not_fire(self):
+        for text in ("2019 - 2021", "Master of Engineering (Data Science) - State University",
+                     "(MEDDIC) - Stakeholder", "- A bullet at line start",
+                     "the job - Python - SQL", "- Built it. Next sentence - lowercase"):
+            self.assertEqual(mc.check_midline_bullets(text), [], text)
+
+    def test_line_number_is_reported(self):
+        self.assertEqual(mc.check_midline_bullets("- ok\n- Fused.- Bullet\n"),
+                         [(2, "mid-line bullet marker")])
+
+    def _report(self, body):
+        with tempfile.TemporaryDirectory() as tmp:
+            app = os.path.join(tmp, "2026-01-01_TestCo_DataAnalyst")
+            os.makedirs(app)
+            with open(os.path.join(app, "Jane_Doe_Resume_260101_TestCo_DataAnalyst.md"), "w",
+                      encoding="utf-8") as fh:
+                fh.write(body)
+            r = subprocess.run([sys.executable, CHECKS, app], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout
+
+    def test_report_prints_the_broken_line(self):
+        """The section is wired into report_application, not just the function."""
+        out = self._report("# Jane Doe\n\n## Professional Experience\n\n"
+                           "- Built the pipeline.- Next bullet\n")
+        self.assertIn("MID-LINE BULLET MARKERS", out)
+        self.assertIn("BROKEN  Jane_Doe_Resume_260101_TestCo_DataAnalyst.md L5 - mid-line bullet marker", out)
+
+    def test_report_is_clean_without_a_fused_marker(self):
+        out = self._report("# Jane Doe\n\n## Professional Experience\n\n- A bullet.\n")
+        self.assertIn("no bullet marker fused", out)
+        self.assertNotIn("mid-line bullet marker", out)
+
+
 class TestInputStamp(unittest.TestCase):
     """The report used to carry no record of when it ran or what it read, so a stale paste
     (a document edited, or the pattern file changed, after the paste was taken) was
@@ -690,8 +859,17 @@ class TestSupersededPatterns(unittest.TestCase):
             r"\b(your ad|the ad|this role|this posting)\b[a-z' ]{0,25}\b(asks?|is asking|needs|wants)\b",
             ["your ad asks for someone who", "this role needs for someone able to"]),
         "the closest thing on my record to": (
-            r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b",
+            r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have|in my (record|history|background))\b",
             ["the closest thing on my record to a formal writing sample"]),
+        # Widened again; the earlier form's own positives must still hit the new one.
+        r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have)\b": (
+            r"\bthe closest (thing|parallel|analog(ue)?|match)\b[^.]{0,20}\b(to|I can offer|on my record|I have|in my (record|history|background))\b",
+            ["the closest thing in my history to", "the closest parallel I can offer",
+             "the closest analogue I have", "the closest match on my record"]),
+        r"\b(link|corpus)\b[^.]{0,10}\babove is there if\b": (
+            r"\b(link|corpus|address|header|page)\b[^.]{0,30}\bis (also )?there (if|for anyone)\b",
+            ["The corpus linked above is there if you want the detail",
+             "the link above is there if useful"]),
         r"rather say (so|that) (now|plainly)": (
             r"rather say (so|that|it)? ?(now|plainly)", ["I would rather say so now"]),
     }

@@ -1,4 +1,4 @@
-<!-- source-hash: c77a185b3019 docs/Writing_Style.md -->
+<!-- source-hash: 4adb9a26fd85 docs/Writing_Style.md -->
 # Writing style — a voice model, and the LLM tells to avoid
 
 **Read this before drafting or revising any resume, cover letter, or screening-question
